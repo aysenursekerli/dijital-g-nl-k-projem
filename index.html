@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijital Günlük</title>
+    <!-- Stil dosyamızı bağlıyoruz -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Çizim Katmanı Araç Paneli -->
+    <div class="toolbar" id="toolbar">
+        <button class="tool-btn active" data-tool="hand" title="El (Sayfa Çevirme)">✋</button>
+        <button class="tool-btn" data-tool="pen" title="Kalem">✏️</button>
+        <button class="tool-btn" data-tool="eraser" title="Silgi">🧹</button>
+        <div class="tool-separator"></div>
+        <div class="color-palette" id="color-palette">
+            <button class="color-btn active" style="background-color: #333333;" data-color="#333333" title="Siyah"></button>
+            <button class="color-btn" style="background-color: #ef4444;" data-color="#ef4444" title="Kırmızı"></button>
+            <button class="color-btn" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mavi"></button>
+            <button class="color-btn" style="background-color: #22c55e;" data-color="#22c55e" title="Yeşil"></button>
+            <button class="color-btn" style="background-color: #eab308;" data-color="#eab308" title="Sarı"></button>
+            <div class="color-wrapper" title="Özel Renk Seç">
+                <input type="color" id="color-picker" value="#333333">
+            </div>
+        </div>
+        <div class="range-wrapper" title="Fırça Kalınlığı">
+            <input type="range" id="size-picker" min="1" max="50" value="3">
+        </div>
+        <div class="tool-separator"></div>
+        <button class="tool-btn danger" id="clear-btn" title="İçeriği Temizle">🗑️</button>
+    </div>
+
+    <!-- Defterin tamamını kapsayan ana kapsayıcı -->
+    <div class="container">
+        <!-- Kitap (Defter) yapısı -->
+        <div class="book" id="book">
+            <!-- Kapak (Ön) -->
+            <div class="page page-cover page-cover-top" data-density="hard">
+                <div class="page-content">
+                    <h2>Dijital Günlük</h2>
+                </div>
+            </div>
+
+            <!-- Sayfa 1 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3 class="page-header">Sayfa 1</h3>
+                    <div class="page-text">
+                        Buraya içerik gelecek...
+                    </div>
+                    <div class="page-footer">1</div>
+                </div>
+                <!-- Çizim alanı -->
+                <canvas class="drawing-layer"></canvas>
+            </div>
+
+            <!-- Sayfa 2 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3 class="page-header">Sayfa 2</h3>
+                    <div class="page-text">
+                        Buraya içerik gelecek...
+                    </div>
+                    <div class="page-footer">2</div>
+                </div>
+                <!-- Çizim alanı -->
+                <canvas class="drawing-layer"></canvas>
+            </div>
+
+            <!-- Sayfa 3 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3 class="page-header">Sayfa 3</h3>
+                    <div class="page-text">
+                        Buraya içerik gelecek...
+                    </div>
+                    <div class="page-footer">3</div>
+                </div>
+                <!-- Çizim alanı -->
+                <canvas class="drawing-layer"></canvas>
+            </div>
+
+            <!-- Sayfa 4 -->
+            <div class="page">
+                <div class="page-content">
+                    <h3 class="page-header">Sayfa 4</h3>
+                    <div class="page-text">
+                        Buraya içerik gelecek...
+                    </div>
+                    <div class="page-footer">4</div>
+                </div>
+                <!-- Çizim alanı -->
+                <canvas class="drawing-layer"></canvas>
+            </div>
+
+            <!-- Kapak (Arka) -->
+            <div class="page page-cover page-cover-bottom" data-density="hard">
+                <div class="page-content">
+                    <h2>Son</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- pageFlip kütüphanesini içeri aktarıyoruz -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+    <!-- Kendi JavaScript dosyamızı bağlıyoruz -->
+    <script src="script.js"></script>
+</body>
+
+</html>
