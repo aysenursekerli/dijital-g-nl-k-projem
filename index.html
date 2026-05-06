@@ -9,13 +9,50 @@
 </head>
 
 <body>
+    <!-- ==================== SPLASH SCREEN ==================== -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-logo">🖋️</div>
+        <h1 class="splash-title">Dijital Günlük</h1>
+    </div>
+
+    <!-- ==================== NOTEBOOK CREATION MODAL ==================== -->
+    <div id="notebook-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Yeni Günlük Oluştur</h2>
+                <button class="close-btn" id="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="notebook-name">Günlük Adı</label>
+                    <input type="text" id="notebook-name" placeholder="Örn: 2026 Planlarım" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label for="notebook-color">Kapak Rengi</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="notebook-color" value="#1e293b">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notebook-pattern">Sayfa Deseni</label>
+                    <select id="notebook-pattern">
+                        <option value="blank">Boş Sayfa</option>
+                        <option value="dotted">Noktalı</option>
+                        <option value="squared">Kareli</option>
+                    </select>
+                </div>
+                <button class="nav-btn primary-btn create-btn" id="create-notebook-btn">Oluştur</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Geçiçleri yumuşak yöneten Ana Uygulama Sarıcısı -->
     <div id="app">
-        
+
         <!-- ==================== AŞAMA 1: KÜTÜPHANE ==================== -->
         <div id="view-library" class="view-layer active">
             <div class="library-container">
-                <h1 class="library-title">Günlüklerim</h1>
+                <h1 class="library-title">Kütüphanem</h1>
                 <div class="library-grid">
                     <!-- Yeni Ekle Kartı -->
                     <div class="book-card add-new" id="add-new-btn">
@@ -37,83 +74,40 @@
         <div id="view-preview" class="view-layer">
             <div class="preview-header">
                 <button class="nav-btn" id="btn-return-library">🔙 Kütüphaneye Dön</button>
+                <button class="nav-btn primary-btn" id="btn-add-page" style="margin-left: 15px;">📄 Yeni Sayfa
+                    Ekle</button>
             </div>
-            
+
             <div class="container" id="main-container">
-                <div class="book" id="book">
-                    <!-- Kapak (Ön) -->
-                    <div class="page page-cover page-cover-top" data-density="hard">
-                        <div class="page-content">
-                            <h2>Dijital Günlük</h2>
-                        </div>
-                    </div>
-
-                    <!-- Orijinal Sayfalar (4 Adet) -->
-                    <div class="page" data-page="1">
-                        <div class="page-content">
-                            <button class="edit-page-btn" title="Bu Sayfayı Düzenle">📝 Düzenle</button>
-                            <h3 class="page-header">Sayfa 1</h3>
-                            <div class="page-text">Buraya içerik gelecek...</div>
-                            <div class="page-footer">1</div>
-                        </div>
-                        <canvas class="drawing-layer"></canvas>
-                    </div>
-                    <div class="page" data-page="2">
-                        <div class="page-content">
-                            <button class="edit-page-btn" title="Bu Sayfayı Düzenle">📝 Düzenle</button>
-                            <h3 class="page-header">Sayfa 2</h3>
-                            <div class="page-text">Buraya içerik gelecek...</div>
-                            <div class="page-footer">2</div>
-                        </div>
-                        <canvas class="drawing-layer"></canvas>
-                    </div>
-                    <div class="page" data-page="3">
-                        <div class="page-content">
-                            <button class="edit-page-btn" title="Bu Sayfayı Düzenle">📝 Düzenle</button>
-                            <h3 class="page-header">Sayfa 3</h3>
-                            <div class="page-text">Buraya içerik gelecek...</div>
-                            <div class="page-footer">3</div>
-                        </div>
-                        <canvas class="drawing-layer"></canvas>
-                    </div>
-                    <div class="page" data-page="4">
-                        <div class="page-content">
-                            <button class="edit-page-btn" title="Bu Sayfayı Düzenle">📝 Düzenle</button>
-                            <h3 class="page-header">Sayfa 4</h3>
-                            <div class="page-text">Buraya içerik gelecek...</div>
-                            <div class="page-footer">4</div>
-                        </div>
-                        <canvas class="drawing-layer"></canvas>
-                    </div>
-
-                    <!-- Kapak (Arka) -->
-                    <div class="page page-cover page-cover-bottom" data-density="hard">
-                        <div class="page-content">
-                            <h2>Son</h2>
-                        </div>
-                    </div>
-                </div>
+                <!-- Book content will be dynamically injected here by JS -->
             </div>
         </div>
 
         <!-- ==================== AŞAMA 3: TEK SAYFA DÜZENLEME (EDİT MODU) ==================== -->
         <div id="view-edit" class="view-layer">
-            
+
             <div class="edit-header">
                 <button class="nav-btn primary-btn" id="btn-finish-edit">💾 Düzenlemeyi Bitir</button>
-                
+
                 <!-- Taşınan Araç Çubuğu -->
                 <div class="toolbar" id="toolbar">
                     <button class="tool-btn active" data-tool="hand" title="El (Sayfa Kaydırma)">✋</button>
-                    <button class="tool-btn" data-tool="pen" title="Kalem">✏️</button>
-                    <button class="tool-btn" data-tool="eraser" title="Silgi">🧹</button>
+                    <button class="tool-btn" data-tool="pen" title="Normal Kalem">✏️</button>
+                    <button class="tool-btn" data-tool="fountain" title="Dolma Kalem">🖋️</button>
+                    <button class="tool-btn" data-tool="highlighter" title="Fosforlu Kalem">🖍️</button>
+                    <button class="tool-btn" data-tool="eraser" title="Silgi">🧽</button>
                     <div class="tool-separator"></div>
                     <div class="color-palette" id="color-palette">
-                        <button class="color-btn active" style="background-color: #333333;" data-color="#333333" title="Siyah"></button>
-                        <button class="color-btn" style="background-color: #ef4444;" data-color="#ef4444" title="Kırmızı"></button>
-                        <button class="color-btn" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mavi"></button>
-                        <button class="color-btn" style="background-color: #22c55e;" data-color="#22c55e" title="Yeşil"></button>
-                        <button class="color-btn" style="background-color: #eab308;" data-color="#eab308" title="Sarı"></button>
+                        <button class="color-btn active" style="background-color: #333333;" data-color="#333333"
+                            title="Siyah"></button>
+                        <button class="color-btn" style="background-color: #ef4444;" data-color="#ef4444"
+                            title="Kırmızı"></button>
+                        <button class="color-btn" style="background-color: #3b82f6;" data-color="#3b82f6"
+                            title="Mavi"></button>
+                        <button class="color-btn" style="background-color: #22c55e;" data-color="#22c55e"
+                            title="Yeşil"></button>
+                        <button class="color-btn" style="background-color: #eab308;" data-color="#eab308"
+                            title="Sarı"></button>
                         <div class="color-wrapper" title="Özel Renk Seç">
                             <input type="color" id="color-picker" value="#333333">
                         </div>
@@ -123,18 +117,36 @@
                     </div>
                     <div class="tool-separator"></div>
                     <button class="tool-btn" id="undo-btn" title="Geri Al">↩️</button>
-                    
-                    <div class="dropdown">
-                        <button class="tool-btn" title="Medya / Sticker Ekle">➕</button>
-                        <div class="dropdown-content">
-                            <label class="dropdown-item">
-                                📷 Fotoğraf Yükle
-                                <input type="file" id="image-upload" accept="image/*" style="display: none;">
-                            </label>
-                            <div class="dropdown-item sticker-btn" data-sticker="⭐">⭐ Yıldız Ekle</div>
-                            <div class="dropdown-item sticker-btn" data-sticker="📌">📌 Raptiye Ekle</div>
-                            <div class="dropdown-item sticker-btn" data-sticker="💡">💡 Fikir Ekle</div>
+
+                    <div class="tool-separator"></div>
+                    <div class="tool-separator"></div>
+                    <div class="media-group" id="media-toolbar">
+                        <button class="tool-btn" id="btn-upload-trigger" title="Fotoğraf Yükle">📷</button>
+                        <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                        
+                        <div class="dropdown" id="emoji-dropdown">
+                            <button class="tool-btn" title="Emoji Ekle">😀</button>
+                            <div class="dropdown-content emoji-grid">
+                                <div class="sticker-btn" data-sticker="⭐">⭐</div>
+                                <div class="sticker-btn" data-sticker="📌">📌</div>
+                                <div class="sticker-btn" data-sticker="💡">💡</div>
+                                <div class="sticker-btn" data-sticker="❤️">❤️</div>
+                                <div class="sticker-btn" data-sticker="🔥">🔥</div>
+                                <div class="sticker-btn" data-sticker="✅">✅</div>
+                                <div class="sticker-btn" data-sticker="🚀">🚀</div>
+                                <div class="sticker-btn" data-sticker="✨">✨</div>
+                                <div class="sticker-btn" data-sticker="🌈">🌈</div>
+                                <div class="sticker-btn" data-sticker="🍎">🍎</div>
+                                <div class="sticker-btn" data-sticker="⚽">⚽</div>
+                                <div class="sticker-btn" data-sticker="🎉">🎉</div>
+                                <div class="sticker-btn" data-sticker="🎨">🎨</div>
+                                <div class="sticker-btn" data-sticker="📸">📸</div>
+                                <div class="sticker-btn" data-sticker="📝">📝</div>
+                                <div class="sticker-btn" data-sticker="🔍">🔍</div>
+                            </div>
                         </div>
+
+                        <button class="tool-btn" id="sticker-popup-btn" title="Sticker Ekle">🏷️</button>
                     </div>
                     <button class="tool-btn danger" id="clear-btn" title="İçeriği Temizle">🗑️</button>
                 </div>
@@ -142,13 +154,35 @@
 
             <!-- Çizerken Zoom ve Pan İşlemlerinin Yapılacağı Tek Sayfa Alanı -->
             <div class="edit-workspace" id="edit-workspace">
+                <button class="nav-arrow-btn left-arrow" id="btn-prev-edit-page" title="Önceki Sayfa">◀</button>
                 <div class="zoom-wrapper" id="zoom-wrapper">
                     <div class="fullscreen-canvas-wrapper" id="edit-page-slot">
                         <!-- Tıklanan sayfanın "canvas" ve "içeriği" geçici olarak buraya teleport edilecek -->
                     </div>
                 </div>
+                <button class="nav-arrow-btn right-arrow" id="btn-next-edit-page" title="Sonraki Sayfa">▶</button>
             </div>
-            
+
+        </div>
+    </div>
+
+    <!-- ==================== STICKER MODAL ==================== -->
+    <div id="sticker-modal" class="modal">
+        <div class="modal-content sticker-modal-content">
+            <div class="modal-header">
+                <h2>Sticker Kütüphanesi</h2>
+                <button class="close-btn" id="close-sticker-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="sticker-tabs">
+                    <button class="tab-btn active" data-sticker-tab="general">Genel</button>
+                    <button class="tab-btn" data-sticker-tab="nature">Doğa</button>
+                    <button class="tab-btn" data-sticker-tab="school">Okul</button>
+                </div>
+                <div class="sticker-grid" id="sticker-library-grid">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -156,4 +190,5 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
