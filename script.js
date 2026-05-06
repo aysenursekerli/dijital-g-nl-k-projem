@@ -128,10 +128,10 @@ const AppManager = {
             bookDiv.innerHTML += `
                 <div class="page pattern-${nb.pattern}" data-page="${i}">
                     <div class="page-content">
-                        <button class="edit-page-btn" title="Bu Sayfayı Düzenle">📝 Düzenle</button>
+                        <button class="edit-page-btn" title="Bu Sayfayı Düzenle"><i data-lucide="pencil"></i> Düzenle</button>
                         <div class="page-footer">${i}</div>
                     </div>
-                    <canvas class="drawing-layer"></canvas>
+                    <canvas class="drawing-layer" data-page="${i}"></canvas>
                 </div>
             `;
         }
@@ -163,15 +163,20 @@ const AppManager = {
             window.pageFlip.turnToPage(startPage);
         }
 
-        // Yeni oluşturulan DOM elementlerinde önceki çizimleri geri yükle
-        if (window.drawingPad) {
-            bookDiv.querySelectorAll('.drawing-layer').forEach(canvas => {
-                window.drawingPad.resizeCanvas(canvas);
-                window.drawingPad.redrawCanvas(canvas);
-            });
-        }
+        // PageFlip başlatıldıktan sonra tüm canvas'ları re-render et
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                if (window.drawingPad) {
+                    bookDiv.querySelectorAll('.drawing-layer').forEach(canvas => {
+                        window.drawingPad.resizeCanvas(canvas);
+                        window.drawingPad.redrawCanvas(canvas);
+                    });
+                }
+            }, 150);
+        });
 
         this.switchPhase(2);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     },
 
     bindPageEvents(container) {
@@ -275,24 +280,30 @@ const AppManager = {
 
             if(window.drawingPad) {
                 window.drawingPad.detachSinglePage();
-                window.drawingPad.resizeCanvas(canvas);
-                window.drawingPad.redrawCanvas(canvas);
             }
 
             this.activePageData = null;
         }
         if(!skipPhaseSwitch) {
             this.switchPhase(2);
-            // Küçük bir gecikme ile defterdeki tüm canvasları tazele
-            setTimeout(() => {
-                const book = document.getElementById('book');
-                if(book) {
-                    book.querySelectorAll('.drawing-layer').forEach(c => {
-                        window.drawingPad.resizeCanvas(c);
-                        window.drawingPad.redrawCanvas(c);
-                    });
-                }
-            }, 50);
+            // Canvas'ları güvenli şekilde re-render et
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const book = document.getElementById('book');
+                    if (book && window.drawingPad) {
+                        // Tüm canvas'ları yeniden boyutlandır ve çiz
+                        book.querySelectorAll('.drawing-layer').forEach(c => {
+                            window.drawingPad.resizeCanvas(c);
+                            window.drawingPad.redrawCanvas(c);
+                        });
+                        // PageFlip'i güncel sayfalarla yeniden başlat
+                        if (window.pageFlip && typeof window.pageFlip.loadFromHTML === 'function') {
+                            const pages = book.querySelectorAll('.page');
+                            window.pageFlip.loadFromHTML(pages);
+                        }
+                    }
+                }, 150);
+            });
         }
     },
 
@@ -394,8 +405,7 @@ class DrawingPad {
         
         clearBtn.addEventListener('click', () => {
             if(!this.activeCanvas) return;
-            const pageEl = this.activeCanvas.closest('.page');
-            const pageNumber = pageEl ? parseInt(pageEl.dataset.page) : 0;
+            const pageNumber = parseInt(this.activeCanvas.dataset.page);
             const notebookId = AppManager.activeNotebookId;
             
             this.globalHistory = this.globalHistory.filter(s => !(s.notebookId === notebookId && s.pageNumber === pageNumber));
@@ -449,8 +459,7 @@ class DrawingPad {
     undo() {
         if(this.globalHistory.length === 0 || !this.activeCanvas) return;
         
-        const pageEl = this.activeCanvas.closest('.page');
-        const pageNumber = pageEl ? parseInt(pageEl.dataset.page) : 0;
+        const pageNumber = parseInt(this.activeCanvas.dataset.page);
         const notebookId = AppManager.activeNotebookId;
 
         // Aktif canvas'ın en son izini bul ve history'den çıkart
@@ -470,8 +479,7 @@ class DrawingPad {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
         
-        const pageEl = canvas.closest('.page');
-        const pageNumber = pageEl ? parseInt(pageEl.dataset.page) : 0;
+        const pageNumber = parseInt(canvas.dataset.page);
         const notebookId = AppManager.activeNotebookId;
 
         const strokes = this.globalHistory.filter(s => s.notebookId === notebookId && s.pageNumber === pageNumber);
@@ -697,8 +705,8 @@ class DrawingPad {
         
         wrapper.innerHTML = `
             <div class="media-controls">
-                <button class="layer-btn" data-action="back" title="Arkaya Gönder">⬇️</button>
-                <button class="layer-btn" data-action="front" title="Öne Getir">⬆️</button>
+                <button class="layer-btn" data-action="back" title="Arkaya Gönder"><i data-lucide="arrow-down-to-line"></i></button>
+                <button class="layer-btn" data-action="front" title="Öne Getir"><i data-lucide="arrow-up-to-line"></i></button>
             </div>
             ${contentHTML}
         `;
@@ -708,6 +716,7 @@ class DrawingPad {
         wrapper.appendChild(handle);
 
         this.activePageContent.appendChild(wrapper);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         this.makeDraggable(wrapper);
     }
 
@@ -802,8 +811,7 @@ class DrawingPad {
         
         let cColor = this.color;
 
-        const pageEl = canvas.closest('.page');
-        const pageNumber = pageEl ? parseInt(pageEl.dataset.page) : 0;
+        const pageNumber = parseInt(canvas.dataset.page);
         const notebookId = AppManager.activeNotebookId;
 
         this.currentStroke = {

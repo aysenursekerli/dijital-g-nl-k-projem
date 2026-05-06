@@ -4,15 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dijital Günlük - Notlarını, çizimlerini ve anılarını sakla">
     <title>Dijital Günlük</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
     <!-- ==================== SPLASH SCREEN ==================== -->
     <div id="splash-screen" class="splash-screen">
-        <div class="splash-logo">🖋️</div>
+        <div class="splash-logo">
+            <i data-lucide="book-open" class="splash-icon"></i>
+        </div>
         <h1 class="splash-title">Dijital Günlük</h1>
+        <p class="splash-subtitle">Anılarını dijital dünyaya taşı</p>
     </div>
 
     <!-- ==================== NOTEBOOK CREATION MODAL ==================== -->
@@ -56,7 +64,7 @@
                 <div class="library-grid">
                     <!-- Yeni Ekle Kartı -->
                     <div class="book-card add-new" id="add-new-btn">
-                        <span class="plus-icon">➕</span>
+                        <span class="plus-icon"><i data-lucide="plus-circle"></i></span>
                         <p>Yeni Günlük Ekle</p>
                     </div>
                     <!-- Örnek Günlük Kartı -->
@@ -73,9 +81,8 @@
         <!-- ==================== AŞAMA 2: DEFTER ÖN İZLEME (KİTAP MODU) ==================== -->
         <div id="view-preview" class="view-layer">
             <div class="preview-header">
-                <button class="nav-btn" id="btn-return-library">🔙 Kütüphaneye Dön</button>
-                <button class="nav-btn primary-btn" id="btn-add-page" style="margin-left: 15px;">📄 Yeni Sayfa
-                    Ekle</button>
+                <button class="nav-btn" id="btn-return-library"><i data-lucide="chevron-left"></i> Kütüphaneye Dön</button>
+                <button class="nav-btn primary-btn" id="btn-add-page" style="margin-left: 15px;"><i data-lucide="file-plus"></i> Yeni Sayfa Ekle</button>
             </div>
 
             <div class="container" id="main-container">
@@ -87,15 +94,15 @@
         <div id="view-edit" class="view-layer">
 
             <div class="edit-header">
-                <button class="nav-btn primary-btn" id="btn-finish-edit">💾 Düzenlemeyi Bitir</button>
+                <button class="nav-btn primary-btn" id="btn-finish-edit"><i data-lucide="save"></i> Kaydet</button>
 
                 <!-- Taşınan Araç Çubuğu -->
                 <div class="toolbar" id="toolbar">
-                    <button class="tool-btn active" data-tool="hand" title="El (Sayfa Kaydırma)">✋</button>
-                    <button class="tool-btn" data-tool="pen" title="Normal Kalem">✏️</button>
-                    <button class="tool-btn" data-tool="fountain" title="Dolma Kalem">🖋️</button>
-                    <button class="tool-btn" data-tool="highlighter" title="Fosforlu Kalem">🖍️</button>
-                    <button class="tool-btn" data-tool="eraser" title="Silgi">🧽</button>
+                    <button class="tool-btn active" data-tool="hand" title="El (Sayfa Kaydırma)"><i data-lucide="hand"></i></button>
+                    <button class="tool-btn" data-tool="pen" title="Normal Kalem"><i data-lucide="pencil"></i></button>
+                    <button class="tool-btn" data-tool="fountain" title="Dolma Kalem"><i data-lucide="pen-tool"></i></button>
+                    <button class="tool-btn" data-tool="highlighter" title="Fosforlu Kalem"><i data-lucide="highlighter"></i></button>
+                    <button class="tool-btn" data-tool="eraser" title="Silgi"><i data-lucide="eraser"></i></button>
                     <div class="tool-separator"></div>
                     <div class="color-palette" id="color-palette">
                         <button class="color-btn active" style="background-color: #333333;" data-color="#333333"
@@ -116,16 +123,16 @@
                         <input type="range" id="size-picker" min="1" max="50" value="3">
                     </div>
                     <div class="tool-separator"></div>
-                    <button class="tool-btn" id="undo-btn" title="Geri Al">↩️</button>
+                    <button class="tool-btn" id="undo-btn" title="Geri Al"><i data-lucide="undo-2"></i></button>
 
                     <div class="tool-separator"></div>
                     <div class="tool-separator"></div>
                     <div class="media-group" id="media-toolbar">
-                        <button class="tool-btn" id="btn-upload-trigger" title="Fotoğraf Yükle">📷</button>
+                        <button class="tool-btn" id="btn-upload-trigger" title="Fotoğraf Yükle"><i data-lucide="image"></i></button>
                         <input type="file" id="image-upload" accept="image/*" style="display: none;">
                         
                         <div class="dropdown" id="emoji-dropdown">
-                            <button class="tool-btn" title="Emoji Ekle">😀</button>
+                            <button class="tool-btn" title="Emoji Ekle"><i data-lucide="smile"></i></button>
                             <div class="dropdown-content emoji-grid">
                                 <div class="sticker-btn" data-sticker="⭐">⭐</div>
                                 <div class="sticker-btn" data-sticker="📌">📌</div>
@@ -146,21 +153,21 @@
                             </div>
                         </div>
 
-                        <button class="tool-btn" id="sticker-popup-btn" title="Sticker Ekle">🏷️</button>
+                        <button class="tool-btn" id="sticker-popup-btn" title="Sticker Ekle"><i data-lucide="sticker"></i></button>
                     </div>
-                    <button class="tool-btn danger" id="clear-btn" title="İçeriği Temizle">🗑️</button>
+                    <button class="tool-btn danger" id="clear-btn" title="İçeriği Temizle"><i data-lucide="trash-2"></i></button>
                 </div>
             </div>
 
             <!-- Çizerken Zoom ve Pan İşlemlerinin Yapılacağı Tek Sayfa Alanı -->
             <div class="edit-workspace" id="edit-workspace">
-                <button class="nav-arrow-btn left-arrow" id="btn-prev-edit-page" title="Önceki Sayfa">◀</button>
+                <button class="nav-arrow-btn left-arrow" id="btn-prev-edit-page" title="Önceki Sayfa"><i data-lucide="chevron-left"></i></button>
                 <div class="zoom-wrapper" id="zoom-wrapper">
                     <div class="fullscreen-canvas-wrapper" id="edit-page-slot">
                         <!-- Tıklanan sayfanın "canvas" ve "içeriği" geçici olarak buraya teleport edilecek -->
                     </div>
                 </div>
-                <button class="nav-arrow-btn right-arrow" id="btn-next-edit-page" title="Sonraki Sayfa">▶</button>
+                <button class="nav-arrow-btn right-arrow" id="btn-next-edit-page" title="Sonraki Sayfa"><i data-lucide="chevron-right"></i></button>
             </div>
 
         </div>
@@ -189,6 +196,12 @@
     <!-- Kütüphaneler -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Lucide ikonlarını başlat
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    </script>
 </body>
 
 </html>
