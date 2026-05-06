@@ -1,3 +1,138 @@
+// === VERİTABANI YÖNETİCİSİ (IndexedDB) ===
+const DatabaseManager = {
+    dbName: 'diaryDB',
+    version: 1,
+    db: null,
+
+    async init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve();
+            };
+            
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('notebooks')) {
+                    db.createObjectStore('notebooks', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('drawings')) {
+                    db.createObjectStore('drawings', { keyPath: 'id', autoIncrement: true });
+                }
+            };
+        });
+    },
+
+    async saveNotebooks(notebooks) {
+        if (!this.db) return;
+        const tx = this.db.transaction('notebooks', 'readwrite');
+        const store = tx.objectStore('notebooks');
+        
+        for (let nb of notebooks) {
+            await new Promise((resolve, reject) => {
+                const req = store.put(nb);
+                req.onsuccess = resolve;
+                req.onerror = reject;
+            });
+        }
+    },
+
+    async loadNotebooks() {
+        if (!this.db) return [];
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction('notebooks', 'readonly');
+            const store = tx.objectStore('notebooks');
+            const request = store.getAll();
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    async saveDrawing(drawing) {
+        if (!this.db) return;
+        const tx = this.db.transaction('drawings', 'readwrite');
+        const store = tx.objectStore('drawings');
+        
+        return new Promise((resolve, reject) => {
+            const req = store.add(drawing);
+            req.onsuccess = resolve;
+            req.onerror = reject;
+        });
+    },
+
+    async loadDrawings() {
+        if (!this.db) return [];
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction('drawings', 'readonly');
+            const store = tx.objectStore('drawings');
+            const request = store.getAll();
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    async clearAll() {
+        if (!this.db) return;
+        const tx = this.db.transaction(['notebooks', 'drawings'], 'readwrite');
+        await new Promise((resolve, reject) => {
+            const req1 = tx.objectStore('notebooks').clear();
+            const req2 = tx.objectStore('drawings').clear();
+            req1.onsuccess = resolve;
+            req1.onerror = reject;
+        });
+    },
+
+    async syncDrawings(notebookId, pageNumber, currentHistory) {
+        if (!this.db) return;
+        
+        const tx = this.db.transaction('drawings', 'readwrite');
+        const store = tx.objectStore('drawings');
+        
+        // İlgili sayfa ve defter için tüm eski çizimleri sil
+        return new Promise((resolve, reject) => {
+            const getAllRequest = store.getAll();
+            
+            getAllRequest.onsuccess = async () => {
+                const allDrawings = getAllRequest.result;
+                
+                // Silmek için de transaction gerekli
+                const deletePromises = allDrawings
+                    .filter(d => d.notebookId === notebookId && d.pageNumber === pageNumber)
+                    .map(d => {
+                        return new Promise((resolveDelete, rejectDelete) => {
+                            const deleteReq = store.delete(d.id);
+                            deleteReq.onsuccess = resolveDelete;
+                            deleteReq.onerror = rejectDelete;
+                        });
+                    });
+                
+                await Promise.all(deletePromises);
+                
+                // Yeni çizimleri ekle
+                const savePromises = currentHistory
+                    .filter(h => h.notebookId === notebookId && h.pageNumber === pageNumber)
+                    .map(h => {
+                        return new Promise((resolveSave, rejectSave) => {
+                            const saveReq = store.add(h);
+                            saveReq.onsuccess = resolveSave;
+                            saveReq.onerror = rejectSave;
+                        });
+                    });
+                
+                await Promise.all(savePromises);
+                resolve();
+            };
+            
+            getAllRequest.onerror = reject;
+        });
+    }
+};
+
 // === UYGULAMA DURUM (PHASE) YÖNETİCİSİ ===
 const AppManager = {
     currentPhase: 1, // 1: Library, 2: Preview, 3: Edit
@@ -10,7 +145,12 @@ const AppManager = {
             name: 'Dijital Ajanda',
             coverColor: '#1e293b',
             pattern: 'blank',
-            pages: 4
+            pages: [
+                { id: 1, snapshot: null },
+                { id: 2, snapshot: null },
+                { id: 3, snapshot: null },
+                { id: 4, snapshot: null }
+            ]
         }
     ],
     activeNotebookId: null,
@@ -22,7 +162,24 @@ const AppManager = {
             3: document.getElementById('view-edit')
         };
 
-        this.renderLibrary();
+        // Veritabanını başlat ve verileri yükle
+        DatabaseManager.init().then(async () => {
+            const savedNotebooks = await DatabaseManager.loadNotebooks();
+            if (savedNotebooks && savedNotebooks.length > 0) {
+                this.notebooks = savedNotebooks;
+            }
+            
+            this.renderLibrary();
+            
+            // çizimleri yükle ve globalHistory'ye ekle
+            if (window.drawingPad) {
+                const savedDrawings = await DatabaseManager.loadDrawings();
+                window.drawingPad.globalHistory = savedDrawings || [];
+            }
+        }).catch(err => {
+            console.error('Database initialization failed:', err);
+            this.renderLibrary();
+        });
 
         // Kütüphane Eventleri - Yeni Ekle Modal
         const modal = document.getElementById('notebook-modal');
@@ -93,14 +250,20 @@ const AppManager = {
         const color = document.getElementById('notebook-color').value;
         const pattern = document.getElementById('notebook-pattern').value;
 
+        const pages = [];
+        for(let i = 1; i <= 2; i++) {
+            pages.push({ id: i, snapshot: null });
+        }
+
         const newNb = {
             id: 'nb-' + Date.now(),
             name: name,
             coverColor: color,
             pattern: pattern,
-            pages: 2 
+            pages: pages
         };
         this.notebooks.push(newNb);
+        DatabaseManager.saveNotebooks(this.notebooks);
         this.renderLibrary();
     },
 
@@ -124,17 +287,17 @@ const AppManager = {
             </div>
         `;
 
-        for(let i = 1; i <= nb.pages; i++) {
+        nb.pages.forEach(pageObj => {
             bookDiv.innerHTML += `
-                <div class="page pattern-${nb.pattern}" data-page="${i}">
+                <div class="page pattern-${nb.pattern}" data-page="${pageObj.id}">
                     <div class="page-content">
                         <button class="edit-page-btn" title="Bu Sayfayı Düzenle"><i data-lucide="pencil"></i> Düzenle</button>
-                        <div class="page-footer">${i}</div>
+                        <div class="page-footer">${pageObj.id}</div>
                     </div>
-                    <canvas class="drawing-layer" data-page="${i}"></canvas>
+                    <canvas class="drawing-layer" data-page="${pageObj.id}"></canvas>
                 </div>
             `;
-        }
+        });
 
         bookDiv.innerHTML += `
             <div class="page page-cover page-cover-bottom" data-density="hard">
@@ -163,7 +326,7 @@ const AppManager = {
             window.pageFlip.turnToPage(startPage);
         }
 
-        // PageFlip başlatıldıktan sonra tüm canvas'ları re-render et
+        // Tüm canvas'ları re-render et
         requestAnimationFrame(() => {
             setTimeout(() => {
                 if (window.drawingPad) {
@@ -174,6 +337,25 @@ const AppManager = {
                 }
             }, 150);
         });
+
+        // onFlip event'i: sayfa çevrildiğinde ekranda görünen canvas'ları redraw et
+        if (window.pageFlip) {
+            window.pageFlip.on('flip', (data) => {
+                // Aktif (ekranda görünen) sayfaları al ve redraw et
+                setTimeout(() => {
+                    if (window.drawingPad) {
+                        const pages = bookDiv.querySelectorAll('.page');
+                        pages.forEach(page => {
+                            const canvas = page.querySelector('.drawing-layer');
+                            if (canvas) {
+                                window.drawingPad.resizeCanvas(canvas);
+                                window.drawingPad.redrawCanvas(canvas);
+                            }
+                        });
+                    }
+                }, 50);
+            });
+        }
 
         this.switchPhase(2);
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -200,14 +382,19 @@ const AppManager = {
             currentIndex = window.pageFlip.getCurrentPageIndex();
         }
 
-        nb.pages += 2;
+        const lastPageId = nb.pages.length > 0 ? nb.pages[nb.pages.length - 1].id : 0;
+        nb.pages.push({ id: lastPageId + 1, snapshot: null });
+        nb.pages.push({ id: lastPageId + 2, snapshot: null });
+        
+        // Notebooks'u DB'ye kaydet
+        DatabaseManager.saveNotebooks(this.notebooks);
         
         // Defteri baştan oluştur, tüm DOM sorunlarını önler ve state'i temizler
         this.openBook(this.activeNotebookId, currentIndex);
 
         // Görsel geri bildirim: Kullanıcıyı defterin sonuna eklenen yeni sayfalara yönlendir
         setTimeout(() => {
-            if(window.pageFlip) window.pageFlip.flip(nb.pages - 1);
+            if(window.pageFlip) window.pageFlip.flip(nb.pages.length - 1);
         }, 150);
     },
 
@@ -224,6 +411,11 @@ const AppManager = {
         if(activeView) {
             activeView.classList.add('active');
             activeView.style.pointerEvents = 'auto';
+        }
+
+        // Phase 2'ye dönüşte verileri DB'ye kaydet
+        if(phase === 2) {
+            DatabaseManager.saveNotebooks(this.notebooks);
         }
 
         if(window.drawingPad) {
@@ -286,22 +478,33 @@ const AppManager = {
         }
         if(!skipPhaseSwitch) {
             this.switchPhase(2);
-            // Canvas'ları güvenli şekilde re-render et
+            // Canvas'ı orijinal yerine taşıdıktan hemen sonra redraw et
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     const book = document.getElementById('book');
-                    if (book && window.drawingPad) {
+                    const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
+                    if (book && window.drawingPad && nb) {
                         // Tüm canvas'ları yeniden boyutlandır ve çiz
                         book.querySelectorAll('.drawing-layer').forEach(c => {
                             window.drawingPad.resizeCanvas(c);
                             window.drawingPad.redrawCanvas(c);
                         });
-                        // PageFlip'i güncel sayfalarla yeniden başlat
+                        // PageFlip'i refresh et
                         if (window.pageFlip && typeof window.pageFlip.loadFromHTML === 'function') {
                             const pages = book.querySelectorAll('.page');
                             window.pageFlip.loadFromHTML(pages);
                         }
+                        
+                        // Veritabanını senkronize et: tüm sayfalar için globalHistory'yi kaydet
+                        nb.pages.forEach(pageObj => {
+                            const pageDrawings = window.drawingPad.globalHistory.filter(
+                                d => d.notebookId === this.activeNotebookId && d.pageNumber === pageObj.id
+                            );
+                            DatabaseManager.syncDrawings(this.activeNotebookId, pageObj.id, window.drawingPad.globalHistory);
+                        });
                     }
+                    // Notebook bilgilerini kaydet
+                    DatabaseManager.saveNotebooks(this.notebooks);
                 }, 150);
             });
         }
@@ -316,7 +519,7 @@ const AppManager = {
         const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
         let targetPageNumber = pageNumber + direction;
 
-        if(targetPageNumber < 1 || targetPageNumber > nb.pages) return;
+        if(targetPageNumber < 1 || targetPageNumber > nb.pages.length) return;
 
         const bookDiv = document.getElementById('book');
         const targetPageElement = bookDiv.querySelector(`.page[data-page="${targetPageNumber}"]`);
@@ -405,10 +608,21 @@ class DrawingPad {
         
         clearBtn.addEventListener('click', () => {
             if(!this.activeCanvas) return;
+            
+            // Canvas sayfa numarası kontrolü
+            if (!this.activeCanvas.dataset.page) {
+                console.warn('Canvas sayfa numarası bulunamadı');
+                return;
+            }
+            
             const pageNumber = parseInt(this.activeCanvas.dataset.page);
             const notebookId = AppManager.activeNotebookId;
             
             this.globalHistory = this.globalHistory.filter(s => !(s.notebookId === notebookId && s.pageNumber === pageNumber));
+            
+            // Veritabanını senkronize et
+            DatabaseManager.syncDrawings(notebookId, pageNumber, this.globalHistory);
+            
             this.redrawCanvas(this.activeCanvas);
         });
     }
@@ -459,6 +673,12 @@ class DrawingPad {
     undo() {
         if(this.globalHistory.length === 0 || !this.activeCanvas) return;
         
+        // Canvas sayfa numarası kontrolü
+        if (!this.activeCanvas.dataset.page) {
+            console.warn('Canvas sayfa numarası bulunamadı');
+            return;
+        }
+        
         const pageNumber = parseInt(this.activeCanvas.dataset.page);
         const notebookId = AppManager.activeNotebookId;
 
@@ -471,11 +691,21 @@ class DrawingPad {
             }
         }
         
+        // Veritabanını senkronize et
+        DatabaseManager.syncDrawings(notebookId, pageNumber, this.globalHistory);
+        
         requestAnimationFrame(() => this.redrawCanvas(this.activeCanvas));
     }
 
     redrawCanvas(canvas) {
         if(!canvas) return;
+        
+        // Canvas sayfa numarası kontrolü
+        if (!canvas.dataset.page) {
+            console.warn('Canvas sayfa numarası bulunamadı');
+            return;
+        }
+        
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
         
@@ -524,7 +754,7 @@ class DrawingPad {
                 }
             }
             ctx.stroke();
-            ctx.globalAlpha = 1; // reset alpha
+            ctx.globalAlpha = 1;
         });
     }
 
@@ -801,6 +1031,12 @@ class DrawingPad {
     startDrawing(e, canvas) {
         if (this.currentMode === 'hand' || !this.isEditing) return; 
         
+        // Canvas sayfa numarası kontrolü
+        if (!canvas.dataset.page) {
+            console.warn('Canvas sayfa numarası bulunamadı');
+            return;
+        }
+        
         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
         canvas.setPointerCapture(e.pointerId);
         this.isDrawing = true;
@@ -820,7 +1056,8 @@ class DrawingPad {
             normSize: this.size / rect.width, 
             points: [{x: unX, y: unY, thicknessMultiplier: 1}],
             notebookId: notebookId,
-            pageNumber: pageNumber
+            pageNumber: pageNumber,
+            _saved: false
         };
 
         this.lastPoint = {x: e.clientX, y: e.clientY};
@@ -874,7 +1111,6 @@ class DrawingPad {
             ctx.moveTo(drawX, drawY);
             ctx.lineTo(drawX, drawY);
             ctx.stroke();
-            // Not: destination-out durumunda resetlemiyoruz, draw() içinde devam edecek
         }
     }
 
@@ -956,16 +1192,30 @@ class DrawingPad {
         this.isDrawing = false;
         if(this.currentStroke && this.currentStroke.points.length > 0) {
             this.globalHistory.push(this.currentStroke);
+            // Veritabanını senkronize et (tüm diziyi güvenli şekilde kaydet)
+            const notebookId = this.currentStroke.notebookId;
+            const pageNumber = this.currentStroke.pageNumber;
+            DatabaseManager.syncDrawings(notebookId, pageNumber, this.globalHistory);
         }
         this.currentStroke = null;
     }
 }
 
 // Ana Kurulum
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
+    // Veritabanını başlat
+    await DatabaseManager.init();
+    
+    // AppManager ve DrawingPad'ı başlat
     AppManager.init();
 
-    setTimeout(() => {
+    setTimeout(async () => {
         window.drawingPad = new DrawingPad();
+        
+        // Veritabanından çizimleri yükle
+        const savedDrawings = await DatabaseManager.loadDrawings();
+        if (savedDrawings && savedDrawings.length > 0) {
+            window.drawingPad.globalHistory = savedDrawings;
+        }
     }, 100);
 });
