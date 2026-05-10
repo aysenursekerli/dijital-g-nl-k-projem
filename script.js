@@ -1,7 +1,7 @@
 // === VERİTABANI YÖNETİCİSİ (IndexedDB) ===
 const DatabaseManager = {
     dbName: 'diaryDB',
-    version: 1,
+    version: 2,
     db: null,
 
     async init() {
@@ -16,12 +16,11 @@ const DatabaseManager = {
             
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
-                if (!db.objectStoreNames.contains('notebooks')) {
-                    db.createObjectStore('notebooks', { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains('drawings')) {
-                    db.createObjectStore('drawings', { keyPath: 'id', autoIncrement: true });
-                }
+                if (db.objectStoreNames.contains('notebooks')) db.deleteObjectStore('notebooks');
+                if (db.objectStoreNames.contains('drawings')) db.deleteObjectStore('drawings');
+                
+                db.createObjectStore('notebooks', { keyPath: 'id' });
+                db.createObjectStore('drawings', { keyPath: 'id', autoIncrement: true });
             };
         });
     },
@@ -87,7 +86,7 @@ const DatabaseManager = {
         });
     },
 
-    async syncDrawings(notebookId, pageNumber, currentHistory) {
+    async syncDrawings(notebookId, pageId, currentHistory) {
         if (!this.db) return;
         
         const tx = this.db.transaction('drawings', 'readwrite');
@@ -102,7 +101,7 @@ const DatabaseManager = {
                 
                 // Silmek için de transaction gerekli
                 const deletePromises = allDrawings
-                    .filter(d => d.notebookId === notebookId && d.pageNumber === pageNumber)
+                    .filter(d => d.notebookId === notebookId && d.pageId === pageId)
                     .map(d => {
                         return new Promise((resolveDelete, rejectDelete) => {
                             const deleteReq = store.delete(d.id);
@@ -115,7 +114,7 @@ const DatabaseManager = {
                 
                 // Yeni çizimleri ekle
                 const savePromises = currentHistory
-                    .filter(h => h.notebookId === notebookId && h.pageNumber === pageNumber)
+                    .filter(h => h.notebookId === notebookId && h.pageId === pageId)
                     .map(h => {
                         return new Promise((resolveSave, rejectSave) => {
                             const saveReq = store.add(h);
@@ -146,10 +145,10 @@ const AppManager = {
             coverColor: '#1e293b',
             pattern: 'blank',
             pages: [
-                { id: 1, snapshot: null },
-                { id: 2, snapshot: null },
-                { id: 3, snapshot: null },
-                { id: 4, snapshot: null }
+                { id: 'pg-sample-1', snapshot: null },
+                { id: 'pg-sample-2', snapshot: null },
+                { id: 'pg-sample-3', snapshot: null },
+                { id: 'pg-sample-4', snapshot: null }
             ]
         }
     ],
@@ -204,7 +203,10 @@ const AppManager = {
         });
 
         // Aşama 3 Eventleri
-        document.getElementById('btn-finish-edit').addEventListener('click', () => this.closeEditMode());
+        document.getElementById('btn-finish-edit').addEventListener('click', () => {
+            this.closeEditMode();
+            this.switchPhase(1);
+        });
         document.getElementById('btn-prev-edit-page').addEventListener('click', () => this.navigateToPage(-1));
         document.getElementById('btn-next-edit-page').addEventListener('click', () => this.navigateToPage(1));
         
@@ -214,6 +216,22 @@ const AppManager = {
                 if(e.key === 'ArrowRight') this.navigateToPage(1);
             }
         });
+
+        // Yan Panel Eventleri
+        const sidebar = document.getElementById('sidebar-navigator');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        if(toggleSidebarBtn && sidebar) {
+            toggleSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+            });
+        }
+        
+        const sidebarAddPageBtn = document.getElementById('sidebar-add-page-btn');
+        if(sidebarAddPageBtn) {
+            sidebarAddPageBtn.addEventListener('click', () => {
+                this.addNewPageToBook();
+            });
+        }
 
         // Splash screen timeout
         setTimeout(() => {
@@ -234,15 +252,52 @@ const AppManager = {
         this.notebooks.forEach(nb => {
             const card = document.createElement('div');
             card.className = 'book-card';
+            
+            let lockHtml = nb.isLocked ? `<i data-lucide="lock" class="book-lock-icon"></i>` : '';
+            
             card.innerHTML = `
-                <div class="book-cover-design" style="background: ${nb.coverColor};">
+                <div class="book-cover-design" style="background: ${nb.coverColor}; position: relative;">
+                    ${lockHtml}
+                    <div class="book-settings" title="Defter Ayarları" data-id="${nb.id}">
+                        <i data-lucide="more-vertical"></i>
+                    </div>
+                    <div class="book-settings-menu" id="menu-${nb.id}">
+                        <button class="toggle-pin-btn" data-id="${nb.id}">${nb.isLocked ? 'Şifreyi Kaldır' : 'Şifre Koy'}</button>
+                    </div>
                     <h3 class="book-title">${nb.name}</h3>
                     <div class="book-date">Nisan 2026</div>
                 </div>
             `;
-            card.addEventListener('click', () => this.openBook(nb.id));
+            
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.book-settings') || e.target.closest('.book-settings-menu')) return;
+                this.handleBookClick(nb);
+            });
+
+            const settingsBtn = card.querySelector('.book-settings');
+            const settingsMenu = card.querySelector('.book-settings-menu');
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.book-settings-menu.active').forEach(m => {
+                    if(m !== settingsMenu) m.classList.remove('active');
+                });
+                settingsMenu.classList.toggle('active');
+            });
+
+            const togglePinBtn = card.querySelector('.toggle-pin-btn');
+            togglePinBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                settingsMenu.classList.remove('active');
+                this.openPinSetupModal(nb);
+            });
+
             grid.appendChild(card);
         });
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.book-settings-menu.active').forEach(m => m.classList.remove('active'));
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     },
 
     createNewNotebook() {
@@ -252,7 +307,7 @@ const AppManager = {
 
         const pages = [];
         for(let i = 1; i <= 2; i++) {
-            pages.push({ id: i, snapshot: null });
+            pages.push({ id: 'pg-' + Date.now() + '-' + i, snapshot: null });
         }
 
         const newNb = {
@@ -260,11 +315,113 @@ const AppManager = {
             name: name,
             coverColor: color,
             pattern: pattern,
-            pages: pages
+            pages: pages,
+            isLocked: false,
+            pinCode: ''
         };
         this.notebooks.push(newNb);
         DatabaseManager.saveNotebooks(this.notebooks);
         this.renderLibrary();
+    },
+
+    handleBookClick(nb) {
+        if(nb.isLocked && nb.pinCode) {
+            this.openPinEntryModal(nb);
+        } else {
+            this.openBook(nb.id);
+        }
+    },
+
+    openPinSetupModal(nb) {
+        const modal = document.getElementById('pin-modal');
+        const title = document.getElementById('pin-modal-title');
+        const input = document.getElementById('pin-input');
+        const btnSubmit = document.getElementById('btn-submit-pin');
+        const btnCancel = document.getElementById('btn-cancel-pin');
+
+        modal.classList.add('active');
+        input.value = '';
+        input.focus();
+
+        if (nb.isLocked) {
+            title.innerText = 'Mevcut PIN\'i Girin (Kaldırmak için)';
+        } else {
+            title.innerText = 'Yeni PIN Belirleyin';
+        }
+
+        const cleanup = () => {
+            modal.classList.remove('active');
+            btnSubmit.replaceWith(btnSubmit.cloneNode(true));
+            btnCancel.replaceWith(btnCancel.cloneNode(true));
+            input.classList.remove('shake');
+        };
+
+        const handleSubmit = () => {
+            const val = input.value.trim();
+            if(val.length !== 4 || isNaN(val)) {
+                input.classList.add('shake');
+                setTimeout(() => input.classList.remove('shake'), 300);
+                return;
+            }
+
+            if(nb.isLocked) {
+                if(val === nb.pinCode) {
+                    nb.isLocked = false;
+                    nb.pinCode = '';
+                    DatabaseManager.saveNotebooks(this.notebooks);
+                    this.renderLibrary();
+                    cleanup();
+                } else {
+                    input.classList.add('shake');
+                    input.value = '';
+                    setTimeout(() => input.classList.remove('shake'), 300);
+                }
+            } else {
+                nb.isLocked = true;
+                nb.pinCode = val;
+                DatabaseManager.saveNotebooks(this.notebooks);
+                this.renderLibrary();
+                cleanup();
+            }
+        };
+
+        document.getElementById('btn-submit-pin').addEventListener('click', handleSubmit);
+        document.getElementById('btn-cancel-pin').addEventListener('click', cleanup);
+    },
+
+    openPinEntryModal(nb) {
+        const modal = document.getElementById('pin-modal');
+        const title = document.getElementById('pin-modal-title');
+        const input = document.getElementById('pin-input');
+        const btnSubmit = document.getElementById('btn-submit-pin');
+        const btnCancel = document.getElementById('btn-cancel-pin');
+
+        modal.classList.add('active');
+        input.value = '';
+        input.focus();
+        title.innerText = 'PIN Girin';
+
+        const cleanup = () => {
+            modal.classList.remove('active');
+            btnSubmit.replaceWith(btnSubmit.cloneNode(true));
+            btnCancel.replaceWith(btnCancel.cloneNode(true));
+            input.classList.remove('shake');
+        };
+
+        const handleSubmit = () => {
+            const val = input.value.trim();
+            if(val === nb.pinCode) {
+                cleanup();
+                this.openBook(nb.id);
+            } else {
+                input.classList.add('shake');
+                input.value = '';
+                setTimeout(() => input.classList.remove('shake'), 300);
+            }
+        };
+
+        document.getElementById('btn-submit-pin').addEventListener('click', handleSubmit);
+        document.getElementById('btn-cancel-pin').addEventListener('click', cleanup);
     },
 
     openBook(id, startPage = 0) {
@@ -287,12 +444,36 @@ const AppManager = {
             </div>
         `;
 
-        nb.pages.forEach(pageObj => {
+        nb.pages.forEach((pageObj, index) => {
+            let mediaHTML = '';
+            if(pageObj.media && pageObj.media.length > 0) {
+                pageObj.media.forEach(m => {
+                    let inner = '';
+                    if (m.type === 'text') inner = `<div class="media-content text-content">${m.content}</div>`;
+                    else if (m.type === 'shape') {
+                        let shapeClass = '';
+                        if(m.content === 'square') shapeClass = 'shape-square';
+                        else if(m.content === 'circle') shapeClass = 'shape-circle';
+                        else if(m.content === 'line') shapeClass = 'shape-line';
+                        else if(m.content === 'triangle') shapeClass = 'shape-triangle';
+                        else if(m.content === 'star') shapeClass = 'shape-star';
+                        else if(m.content === 'arrow') shapeClass = 'shape-arrow';
+                        else if(m.content === 'diamond') shapeClass = 'shape-diamond';
+                        inner = `<div class="media-content ${shapeClass}"></div>`;
+                    }
+                    else if (m.type === 'sticker') inner = `<div class="media-content"><div class="sticker" style="font-size: ${m.width/20}rem;">${m.content}</div></div>`;
+                    else if (m.type === 'image') inner = `<div class="media-content"><img src="${m.content}"></div>`;
+
+                    mediaHTML += `<div class="static-media" style="position:absolute; left:${m.x}px; top:${m.y}px; width:${m.width}px; height:${m.height}px; transform:rotate(${m.rotation || 0}deg); z-index:${m.zIndex}; pointer-events:none;">${inner}</div>`;
+                });
+            }
+
             bookDiv.innerHTML += `
                 <div class="page pattern-${nb.pattern}" data-page="${pageObj.id}">
                     <div class="page-content">
+                        ${mediaHTML}
                         <button class="edit-page-btn" title="Bu Sayfayı Düzenle"><i data-lucide="pencil"></i> Düzenle</button>
-                        <div class="page-footer">${pageObj.id}</div>
+                        <div class="page-footer">${index + 1}</div>
                     </div>
                     <canvas class="drawing-layer" data-page="${pageObj.id}"></canvas>
                 </div>
@@ -382,20 +563,23 @@ const AppManager = {
             currentIndex = window.pageFlip.getCurrentPageIndex();
         }
 
-        const lastPageId = nb.pages.length > 0 ? nb.pages[nb.pages.length - 1].id : 0;
-        nb.pages.push({ id: lastPageId + 1, snapshot: null });
-        nb.pages.push({ id: lastPageId + 2, snapshot: null });
+        const timestamp = Date.now();
+        const newPageId1 = 'pg-' + timestamp + '-1';
+        const newPageId2 = 'pg-' + timestamp + '-2';
+        nb.pages.push({ id: newPageId1, snapshot: null });
+        nb.pages.push({ id: newPageId2, snapshot: null });
         
         // Notebooks'u DB'ye kaydet
         DatabaseManager.saveNotebooks(this.notebooks);
         
-        // Defteri baştan oluştur, tüm DOM sorunlarını önler ve state'i temizler
-        this.openBook(this.activeNotebookId, currentIndex);
-
-        // Görsel geri bildirim: Kullanıcıyı defterin sonuna eklenen yeni sayfalara yönlendir
-        setTimeout(() => {
-            if(window.pageFlip) window.pageFlip.flip(nb.pages.length - 1);
-        }, 150);
+        if (this.currentPhase === 3) {
+            this.refreshBookStructure(newPageId1);
+        } else {
+            this.openBook(this.activeNotebookId, currentIndex);
+            setTimeout(() => {
+                if(window.pageFlip) window.pageFlip.flip(nb.pages.length - 1);
+            }, 150);
+        }
     },
 
     switchPhase(phase) {
@@ -455,12 +639,47 @@ const AppManager = {
         }
 
         if(this.currentPhase !== 3) this.switchPhase(3);
+        this.renderSidebar();
     },
 
     closeEditMode(skipPhaseSwitch = false) {
         if(this.activePageData) {
             const { parent, content, canvas } = this.activePageData;
             
+            // Revert dynamic media to static to clean up DOM for Phase 2
+            content.querySelectorAll('.transform-box').forEach(el => el.remove());
+            
+            const pageId = canvas.dataset.page;
+            const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
+            if(nb) {
+                const page = nb.pages.find(p => p.id === pageId);
+                if(page && page.media) {
+                    page.media.forEach(m => {
+                        let inner = '';
+                        if (m.type === 'text') inner = `<div class="media-content text-content">${m.content}</div>`;
+                        else if (m.type === 'shape') {
+                            let shapeClass = '';
+                            if(m.content === 'square') shapeClass = 'shape-square';
+                            else if(m.content === 'circle') shapeClass = 'shape-circle';
+                            else if(m.content === 'line') shapeClass = 'shape-line';
+                            else if(m.content === 'triangle') shapeClass = 'shape-triangle';
+                            else if(m.content === 'star') shapeClass = 'shape-star';
+                            else if(m.content === 'arrow') shapeClass = 'shape-arrow';
+                            else if(m.content === 'diamond') shapeClass = 'shape-diamond';
+                            inner = `<div class="media-content ${shapeClass}"></div>`;
+                        }
+                        else if (m.type === 'sticker') inner = `<div class="media-content"><div class="sticker" style="font-size: ${m.width/20}rem;">${m.content}</div></div>`;
+                        else if (m.type === 'image') inner = `<div class="media-content"><img src="${m.content}"></div>`;
+
+                        const staticDiv = document.createElement('div');
+                        staticDiv.className = 'static-media';
+                        staticDiv.style.cssText = `position:absolute; left:${m.x}px; top:${m.y}px; width:${m.width}px; height:${m.height}px; transform:rotate(${m.rotation || 0}deg); z-index:${m.zIndex}; pointer-events:none;`;
+                        staticDiv.innerHTML = inner;
+                        content.insertBefore(staticDiv, content.querySelector('.edit-page-btn'));
+                    });
+                }
+            }
+
             const editBtn = content.querySelector('.edit-page-btn');
             if(editBtn) editBtn.style.display = 'block';
 
@@ -498,7 +717,7 @@ const AppManager = {
                         // Veritabanını senkronize et: tüm sayfalar için globalHistory'yi kaydet
                         nb.pages.forEach(pageObj => {
                             const pageDrawings = window.drawingPad.globalHistory.filter(
-                                d => d.notebookId === this.activeNotebookId && d.pageNumber === pageObj.id
+                                d => d.notebookId === this.activeNotebookId && d.pageId === pageObj.id
                             );
                             DatabaseManager.syncDrawings(this.activeNotebookId, pageObj.id, window.drawingPad.globalHistory);
                         });
@@ -513,20 +732,191 @@ const AppManager = {
     navigateToPage(direction) {
         if(!this.activePageData) return;
         const currentPage = this.activePageData.parent;
-        const pageNumber = parseInt(currentPage.dataset.page);
-        if(isNaN(pageNumber)) return;
+        const pageId = currentPage.dataset.page;
+        if(!pageId) return;
 
         const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
-        let targetPageNumber = pageNumber + direction;
+        if(!nb) return;
 
-        if(targetPageNumber < 1 || targetPageNumber > nb.pages.length) return;
+        const currentIndex = nb.pages.findIndex(p => p.id === pageId);
+        if(currentIndex === -1) return;
 
+        const targetIndex = currentIndex + direction;
+        if(targetIndex < 0 || targetIndex >= nb.pages.length) return;
+
+        const targetPageId = nb.pages[targetIndex].id;
         const bookDiv = document.getElementById('book');
-        const targetPageElement = bookDiv.querySelector(`.page[data-page="${targetPageNumber}"]`);
+        const targetPageElement = bookDiv.querySelector(`.page[data-page="${targetPageId}"]`);
         
         if(targetPageElement) {
             this.openEditMode(targetPageElement);
         }
+    },
+
+    refreshBookStructure(targetPageId) {
+        if (this.currentPhase === 3 && this.activePageData) {
+            this.closeEditMode(true);
+        }
+        
+        let currentIndex = 0;
+        if(window.pageFlip) {
+            currentIndex = window.pageFlip.getCurrentPageIndex();
+        }
+        
+        this.openBook(this.activeNotebookId, currentIndex);
+        if (this.currentPhase !== 3) {
+            this.switchPhase(3);
+        }
+        
+        if(targetPageId) {
+            setTimeout(() => {
+                const bookDiv = document.getElementById('book');
+                const targetPageElement = bookDiv.querySelector(`.page[data-page="${targetPageId}"]`);
+                if(targetPageElement) {
+                    this.openEditMode(targetPageElement);
+                }
+            }, 100);
+        }
+        
+        this.renderSidebar();
+    },
+
+    renderSidebar() {
+        const container = document.getElementById('thumbnails-container');
+        if(!container || !this.activeNotebookId) return;
+        
+        container.innerHTML = '';
+        const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
+        if(!nb) return;
+
+        const activePageId = this.activePageData ? this.activePageData.parent.dataset.page : null;
+
+        nb.pages.forEach((pageObj, index) => {
+            const card = document.createElement('div');
+            card.className = 'thumbnail-card';
+            card.draggable = true;
+            if(pageObj.id === activePageId) {
+                card.classList.add('active');
+            }
+
+            // Thumbnail içeriği
+            card.innerHTML = `
+                <div class="thumbnail-preview pattern-${nb.pattern}"></div>
+                <div class="thumbnail-page-num">Sayfa ${index + 1}</div>
+                <button class="delete-page-btn" title="Sayfayı Sil"><i data-lucide="trash-2"></i></button>
+            `;
+
+            // Mini Canvas oluştur
+            const previewDiv = card.querySelector('.thumbnail-preview');
+            const miniCanvas = document.createElement('canvas');
+            miniCanvas.width = 450; 
+            miniCanvas.height = 600;
+            miniCanvas.style.width = '100%';
+            miniCanvas.style.height = '100%';
+            previewDiv.appendChild(miniCanvas);
+            
+            // Çizimleri yükle
+            if (window.drawingPad && window.drawingPad.globalHistory) {
+                const ctx = miniCanvas.getContext('2d');
+                const strokes = window.drawingPad.globalHistory.filter(s => s.notebookId === nb.id && s.pageId === pageObj.id);
+                strokes.forEach(stroke => {
+                    if (stroke.points.length === 0) return;
+                    ctx.beginPath();
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    let actualLineWidth = stroke.normSize * miniCanvas.width;
+                    ctx.lineWidth = actualLineWidth;
+                    if (stroke.mode === 'eraser') {
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.lineWidth = actualLineWidth * 2;
+                    } else if (stroke.mode === 'highlighter') {
+                        ctx.globalCompositeOperation = 'multiply';
+                        ctx.strokeStyle = stroke.color;
+                        ctx.globalAlpha = 0.4;
+                        ctx.lineWidth = actualLineWidth * 3;
+                    } else {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.strokeStyle = stroke.color;
+                    }
+                    ctx.moveTo(stroke.points[0].x * miniCanvas.width, stroke.points[0].y * miniCanvas.height);
+                    for(let i = 1; i < stroke.points.length; i++) {
+                        ctx.lineTo(stroke.points[i].x * miniCanvas.width, stroke.points[i].y * miniCanvas.height);
+                    }
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    ctx.globalCompositeOperation = 'source-over';
+                });
+            }
+
+            // Olaylar
+            card.addEventListener('click', () => {
+                if(pageObj.id !== activePageId) {
+                    const bookDiv = document.getElementById('book');
+                    const targetPageElement = bookDiv.querySelector(`.page[data-page="${pageObj.id}"]`);
+                    if(targetPageElement) this.openEditMode(targetPageElement);
+                }
+            });
+
+            const deleteBtn = card.querySelector('.delete-page-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if(nb.pages.length <= 1) {
+                    alert('Bir defterde en az 1 sayfa bulunmalıdır!');
+                    return;
+                }
+                
+                // Silme işlemi
+                nb.pages.splice(index, 1);
+                
+                // DB'den çizimleri sil
+                if (window.drawingPad) {
+                    window.drawingPad.globalHistory = window.drawingPad.globalHistory.filter(s => !(s.notebookId === nb.id && s.pageId === pageObj.id));
+                    DatabaseManager.syncDrawings(nb.id, pageObj.id, []);
+                }
+                DatabaseManager.saveNotebooks(this.notebooks);
+                
+                // Eğer silinen sayfa şu an aktif olan sayfaysa, ilk sayfayı aç
+                let targetPageId = activePageId;
+                if(activePageId === pageObj.id) {
+                    targetPageId = nb.pages[0].id;
+                }
+                this.refreshBookStructure(targetPageId);
+            });
+
+            // Sürükle Bırak (Drag & Drop)
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', index);
+                card.classList.add('dragging');
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                container.querySelectorAll('.thumbnail-card').forEach(c => c.classList.remove('drag-over'));
+            });
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                card.classList.add('drag-over');
+            });
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('drag-over');
+            });
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over');
+                const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                const toIndex = index;
+                if(fromIndex !== toIndex && !isNaN(fromIndex)) {
+                    // Sayfaların yerini değiştir
+                    const movedPage = nb.pages.splice(fromIndex, 1)[0];
+                    nb.pages.splice(toIndex, 0, movedPage);
+                    DatabaseManager.saveNotebooks(this.notebooks);
+                    this.refreshBookStructure(activePageId);
+                }
+            });
+
+            container.appendChild(card);
+        });
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 };
 
@@ -615,15 +1005,16 @@ class DrawingPad {
                 return;
             }
             
-            const pageNumber = parseInt(this.activeCanvas.dataset.page);
+            const pageId = this.activeCanvas.dataset.page;
             const notebookId = AppManager.activeNotebookId;
             
-            this.globalHistory = this.globalHistory.filter(s => !(s.notebookId === notebookId && s.pageNumber === pageNumber));
+            this.globalHistory = this.globalHistory.filter(s => !(s.notebookId === notebookId && s.pageId === pageId));
             
             // Veritabanını senkronize et
-            DatabaseManager.syncDrawings(notebookId, pageNumber, this.globalHistory);
+            DatabaseManager.syncDrawings(notebookId, pageId, this.globalHistory);
             
             this.redrawCanvas(this.activeCanvas);
+            if(typeof AppManager !== 'undefined') AppManager.renderSidebar();
         });
     }
 
@@ -646,6 +1037,18 @@ class DrawingPad {
         }
 
         this.setEditingState(true);
+
+        // Clear static media and spawn transform boxes
+        pageContent.querySelectorAll('.static-media').forEach(el => el.remove());
+        
+        const pageId = canvas.dataset.page;
+        const nb = AppManager.notebooks.find(n => n.id === AppManager.activeNotebookId);
+        if(nb) {
+            const page = nb.pages.find(p => p.id === pageId);
+            if(page && page.media) {
+                page.media.forEach(m => this.addMediaToPage(m, true));
+            }
+        }
     }
 
     detachSinglePage() {
@@ -679,22 +1082,23 @@ class DrawingPad {
             return;
         }
         
-        const pageNumber = parseInt(this.activeCanvas.dataset.page);
+        const pageId = this.activeCanvas.dataset.page;
         const notebookId = AppManager.activeNotebookId;
 
         // Aktif canvas'ın en son izini bul ve history'den çıkart
         for(let i = this.globalHistory.length -1; i >= 0; i--) {
             const stroke = this.globalHistory[i];
-            if(stroke.notebookId === notebookId && stroke.pageNumber === pageNumber) {
+            if(stroke.notebookId === notebookId && stroke.pageId === pageId) {
                 this.globalHistory.splice(i, 1);
                 break;
             }
         }
         
         // Veritabanını senkronize et
-        DatabaseManager.syncDrawings(notebookId, pageNumber, this.globalHistory);
+        DatabaseManager.syncDrawings(notebookId, pageId, this.globalHistory);
         
         requestAnimationFrame(() => this.redrawCanvas(this.activeCanvas));
+        if(typeof AppManager !== 'undefined') AppManager.renderSidebar();
     }
 
     redrawCanvas(canvas) {
@@ -709,10 +1113,10 @@ class DrawingPad {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
         
-        const pageNumber = parseInt(canvas.dataset.page);
+        const pageId = canvas.dataset.page;
         const notebookId = AppManager.activeNotebookId;
 
-        const strokes = this.globalHistory.filter(s => s.notebookId === notebookId && s.pageNumber === pageNumber);
+        const strokes = this.globalHistory.filter(s => s.notebookId === notebookId && s.pageId === pageId);
         strokes.forEach(stroke => {
             if (stroke.points.length === 0) return;
             
@@ -772,13 +1176,15 @@ class DrawingPad {
         // --- DOKUNMATİK / MULTI-TOUCH ZOOM ---
         container.addEventListener('pointerdown', (e) => {
             if(!this.isEditing) return;
-            if(this.currentMode === 'hand') activePointers.set(e.pointerId, e);
-        });
+            activePointers.set(e.pointerId, e);
+            if(activePointers.size >= 2) this.stopDrawing();
+        }, { capture: true });
 
         container.addEventListener('pointermove', (e) => {
             if(activePointers.has(e.pointerId)) activePointers.set(e.pointerId, e);
 
             if(activePointers.size === 2) {
+                e.preventDefault(); e.stopPropagation();
                 const ptrs = Array.from(activePointers.values());
                 const dist = getDistance(ptrs[0], ptrs[1]);
 
@@ -787,13 +1193,13 @@ class DrawingPad {
                 } else {
                     const scaleChange = dist / initialDist;
                     let newZoom = this.zoomLevel * scaleChange;
-                    newZoom = Math.min(Math.max(1, newZoom), 4);
+                    newZoom = Math.min(Math.max(1, newZoom), 10);
 
                     zoomWrapper.style.transform = `scale(${newZoom})`;
                     this.pendingZoom = newZoom;
                 }
             }
-        });
+        }, { capture: true });
 
         const pointerEnd = (e) => {
             activePointers.delete(e.pointerId);
@@ -806,13 +1212,13 @@ class DrawingPad {
             }
         };
 
-        container.addEventListener('pointerup', pointerEnd);
-        container.addEventListener('pointercancel', pointerEnd);
-        container.addEventListener('pointerout', pointerEnd);
+        container.addEventListener('pointerup', pointerEnd, { capture: true });
+        container.addEventListener('pointercancel', pointerEnd, { capture: true });
+        container.addEventListener('pointerout', pointerEnd, { capture: true });
 
         // --- FARE TEKERLEĞİ (MOUSE WHEEL) İLE ZOOM ---
         container.addEventListener('wheel', (e) => {
-            if(!this.isEditing || this.currentMode !== 'hand') return;
+            if(!this.isEditing) return;
             e.preventDefault(); // Sayfanın normalde kaymasını engeller
             
             const zoomSpeed = 0.15;
@@ -820,7 +1226,7 @@ class DrawingPad {
             const direction = e.deltaY > 0 ? -1 : 1;
             
             let newZoom = this.zoomLevel + (direction * zoomSpeed);
-            newZoom = Math.min(Math.max(1, newZoom), 4);
+            newZoom = Math.min(Math.max(1, newZoom), 10);
             
             this.pendingZoom = newZoom;
             zoomWrapper.style.transform = `scale(${newZoom})`;
@@ -856,7 +1262,7 @@ class DrawingPad {
                 const file = e.target.files[0];
                 if(file) {
                     const reader = new FileReader();
-                    reader.onload = (event) => this.addMediaToPage(`<img src="${event.target.result}">`);
+                    reader.onload = (event) => this.addMediaToPage({ type: 'image', content: event.target.result, width: 200, height: 200 });
                     reader.readAsDataURL(file);
                 }
             });
@@ -867,7 +1273,7 @@ class DrawingPad {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const emoji = btn.dataset.sticker;
-                this.addMediaToPage(`<div class="sticker">${emoji}</div>`);
+                this.addMediaToPage({ type: 'sticker', content: emoji, width: 100, height: 100 });
             });
         });
 
@@ -895,9 +1301,54 @@ class DrawingPad {
             });
         });
 
+        // Text ve Şekil Araçları
+        const btnAddText = document.getElementById('btn-add-text');
+        if (btnAddText) {
+            btnAddText.addEventListener('click', () => {
+                this.addMediaToPage({
+                    type: 'text',
+                    content: 'Yeni Metin',
+                    width: 150,
+                    height: 50
+                });
+            });
+        }
+
+        const shapeBtns = document.querySelectorAll('.shape-btn');
+        shapeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const shapeType = btn.dataset.shape;
+                this.addMediaToPage({
+                    type: 'shape',
+                    content: shapeType,
+                    width: 100,
+                    height: 100
+                });
+                // Dropdown'ı kapat (CSS hover ile hallediliyor olabilir, ama garanti olsun)
+                const dropdown = document.getElementById('shape-dropdown');
+                if (dropdown) {
+                    const content = dropdown.querySelector('.dropdown-content');
+                    content.style.display = 'none';
+                    setTimeout(() => content.style.display = '', 100);
+                }
+            });
+        });
+
         document.addEventListener('pointerdown', (e) => {
-            if(!e.target.closest('.draggable-item') && this.currentMode === 'hand') {
-                document.querySelectorAll('.draggable-item').forEach(el => el.classList.remove('selected'));
+            if(!e.target.closest('.transform-box') && this.currentMode === 'hand') {
+                document.querySelectorAll('.transform-box').forEach(el => {
+                    el.classList.remove('selected');
+                    // Eğer text edit modundaysa çık
+                    const textContent = el.querySelector('.text-content');
+                    if (textContent && textContent.isContentEditable) {
+                        textContent.contentEditable = "false";
+                        const zoomWrapper = document.getElementById('zoom-wrapper');
+                        if(zoomWrapper) zoomWrapper.classList.remove('zoom-active');
+                        // İçeriği güncelle ve kaydet
+                        this.updateMediaData(el.dataset.id, { content: textContent.innerText });
+                    }
+                });
             }
         });
     }
@@ -919,46 +1370,127 @@ class DrawingPad {
             item.className = 'sticker-item';
             item.innerHTML = emoji;
             item.addEventListener('click', () => {
-                this.addMediaToPage(`<div class="sticker">${emoji}</div>`);
+                this.addMediaToPage({ type: 'sticker', content: emoji, width: 100, height: 100 });
                 document.getElementById('sticker-modal').classList.remove('active');
             });
             grid.appendChild(item);
         });
     }
 
-    addMediaToPage(contentHTML) {
-        if(!this.activePageContent) return; // Sadece edit modundaysa eklenebilir
+    addMediaToPage(mediaData, isInitialLoad = false) {
+        if(!this.activePageContent) return; 
+        
+        if (!mediaData.id) {
+            mediaData.id = 'media-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            mediaData.x = 50;
+            mediaData.y = 50;
+            mediaData.width = mediaData.width || 100;
+            mediaData.height = mediaData.height || 100;
+            mediaData.rotation = 0;
+            mediaData.zIndex = 10;
+        }
 
         const wrapper = document.createElement('div');
-        wrapper.className = 'draggable-item selected';
-        wrapper.style.zIndex = 10; // .page-content (150) içinde olduğu için zaten tuvalin (100) üstünde.
+        wrapper.className = isInitialLoad ? 'transform-box' : 'transform-box selected';
+        wrapper.dataset.id = mediaData.id;
+        wrapper.style.left = `${mediaData.x}px`;
+        wrapper.style.top = `${mediaData.y}px`;
+        wrapper.style.width = `${mediaData.width}px`;
+        wrapper.style.height = `${mediaData.height}px`;
+        wrapper.style.transform = `rotate(${mediaData.rotation}deg)`;
+        wrapper.style.zIndex = mediaData.zIndex;
         
-        wrapper.innerHTML = `
-            <div class="media-controls">
-                <button class="layer-btn" data-action="back" title="Arkaya Gönder"><i data-lucide="arrow-down-to-line"></i></button>
-                <button class="layer-btn" data-action="front" title="Öne Getir"><i data-lucide="arrow-up-to-line"></i></button>
-            </div>
-            ${contentHTML}
-        `;
+        let innerHTML = '';
+        if (mediaData.type === 'text') {
+            innerHTML = `<div class="media-content text-content" contenteditable="false">${mediaData.content}</div>`;
+        } else if (mediaData.type === 'shape') {
+            let shapeClass = '';
+            if(mediaData.content === 'square') shapeClass = 'shape-square';
+            else if(mediaData.content === 'circle') shapeClass = 'shape-circle';
+            else if(mediaData.content === 'line') shapeClass = 'shape-line';
+            else if(mediaData.content === 'triangle') shapeClass = 'shape-triangle';
+            else if(mediaData.content === 'star') shapeClass = 'shape-star';
+            else if(mediaData.content === 'arrow') shapeClass = 'shape-arrow';
+            else if(mediaData.content === 'diamond') shapeClass = 'shape-diamond';
+            innerHTML = `<div class="media-content ${shapeClass}"></div>`;
+        } else if (mediaData.type === 'sticker') {
+            innerHTML = `<div class="media-content"><div class="sticker" style="font-size: ${mediaData.width/20}rem;">${mediaData.content}</div></div>`;
+        } else if (mediaData.type === 'image') {
+            innerHTML = `<div class="media-content"><img src="${mediaData.content}"></div>`;
+        }
 
-        const handle = document.createElement('div');
-        handle.className = 'resize-handle';
-        wrapper.appendChild(handle);
+        wrapper.innerHTML = `
+            <div class="settings-toggle" title="Katman Ayarları"><i data-lucide="more-vertical"></i></div>
+            <div class="media-controls">
+                <button class="layer-btn" data-action="front" title="Öne Getir"><i data-lucide="arrow-up-to-line"></i></button>
+                <button class="layer-btn" data-action="back" title="Arkaya Gönder"><i data-lucide="arrow-down-to-line"></i></button>
+            </div>
+            <div class="rotate-handle" title="Döndür"><i data-lucide="rotate-cw"></i></div>
+            <div class="resize-handle resize-nw" data-resize="nw"></div>
+            <div class="resize-handle resize-n" data-resize="n"></div>
+            <div class="resize-handle resize-ne" data-resize="ne"></div>
+            <div class="resize-handle resize-w" data-resize="w"></div>
+            <div class="resize-handle resize-e" data-resize="e"></div>
+            <div class="resize-handle resize-sw" data-resize="sw"></div>
+            <div class="resize-handle resize-s" data-resize="s"></div>
+            <div class="resize-handle resize-se" data-resize="se"></div>
+            ${innerHTML}
+        `;
 
         this.activePageContent.appendChild(wrapper);
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        this.makeDraggable(wrapper);
+        
+        if (mediaData.type === 'text') {
+            const textContent = wrapper.querySelector('.text-content');
+            wrapper.addEventListener('dblclick', (e) => {
+                if (this.currentMode !== 'hand') return;
+                textContent.contentEditable = "true";
+                textContent.focus();
+                document.execCommand('selectAll', false, null);
+                document.getSelection().collapseToEnd();
+                
+                const zoomWrapper = document.getElementById('zoom-wrapper');
+                if(zoomWrapper) zoomWrapper.classList.add('zoom-active');
+            });
+            textContent.addEventListener('pointerdown', (e) => {
+                if (textContent.isContentEditable) e.stopPropagation();
+            });
+            textContent.addEventListener('blur', () => {
+                const zoomWrapper = document.getElementById('zoom-wrapper');
+                if(zoomWrapper) zoomWrapper.classList.remove('zoom-active');
+                
+                this.updateMediaData(mediaData.id, { content: textContent.innerText });
+            });
+        }
+
+        const settingsToggle = wrapper.querySelector('.settings-toggle');
+        const mediaControls = wrapper.querySelector('.media-controls');
+        if(settingsToggle && mediaControls) {
+            settingsToggle.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                mediaControls.classList.toggle('active');
+            });
+        }
+
+        this.setupTransformEngine(wrapper);
+
+        if (!isInitialLoad) {
+            this.saveMediaToDB(mediaData);
+        }
     }
 
-    makeDraggable(elem) {
-        let isDragging = false, isResizing = false;
-        let startX, startY, startW, startLeft, startTop;
-        const handle = elem.querySelector('.resize-handle');
+    setupTransformEngine(elem) {
+        let isDragging = false, isResizing = false, isRotating = false;
+        let startX, startY, startW, startH, startLeft, startTop, startAngle;
+        let resizeDir = '';
+
+        const rotateHandle = elem.querySelector('.rotate-handle');
+        const resizeHandles = elem.querySelectorAll('.resize-handle');
         const mediaControls = elem.querySelector('.media-controls');
 
         if(mediaControls) {
             mediaControls.addEventListener('pointerdown', (e) => {
-                e.stopPropagation(); // Draggable hareketini engelle
+                e.stopPropagation();
                 const action = e.target.closest('.layer-btn')?.dataset.action;
                 let currentZ = parseInt(elem.style.zIndex) || 10;
                 if(action === 'back') {
@@ -966,51 +1498,138 @@ class DrawingPad {
                 } else if(action === 'front') {
                     elem.style.zIndex = currentZ + 1;
                 }
+                this.updateMediaData(elem.dataset.id, { zIndex: parseInt(elem.style.zIndex) });
             });
         }
 
         elem.addEventListener('pointerdown', (e) => {
             if(this.currentMode !== 'hand') return; 
-            
             e.stopPropagation(); 
             e.preventDefault();
             
-            document.querySelectorAll('.draggable-item').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.transform-box').forEach(el => el.classList.remove('selected'));
             elem.classList.add('selected');
 
-            if (e.target === handle) {
-                isResizing = true;
-                startW = elem.offsetWidth;
-            } else {
-                isDragging = true;
-                startLeft = elem.offsetLeft;
-                startTop = elem.offsetTop;
-            }
             startX = e.clientX;
             startY = e.clientY;
+            startLeft = elem.offsetLeft;
+            startTop = elem.offsetTop;
+            startW = elem.offsetWidth;
+            startH = elem.offsetHeight;
+
+            // Extract current rotation
+            const tr = window.getComputedStyle(elem).getPropertyValue("transform");
+            if(tr !== 'none') {
+                const values = tr.split('(')[1].split(')')[0].split(',');
+                const a = values[0];
+                const b = values[1];
+                startAngle = Math.round(Math.atan2(b, a) * (180/Math.PI));
+            } else {
+                startAngle = 0;
+            }
+
+            if (e.target === rotateHandle) {
+                isRotating = true;
+            } else if (e.target.classList.contains('resize-handle')) {
+                isResizing = true;
+                resizeDir = e.target.dataset.resize;
+            } else {
+                isDragging = true;
+            }
             elem.setPointerCapture(e.pointerId);
         });
 
         elem.addEventListener('pointermove', (e) => {
-            if (!isDragging && !isResizing) return;
+            if (!isDragging && !isResizing && !isRotating) return;
             e.stopPropagation();
 
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            const zoomCorrectedDx = dx / this.zoomLevel;
-            const zoomCorrectedDy = dy / this.zoomLevel;
+            const dx = (e.clientX - startX) / this.zoomLevel;
+            const dy = (e.clientY - startY) / this.zoomLevel;
 
             if (isDragging) {
-                elem.style.left = `${startLeft + zoomCorrectedDx}px`;
-                elem.style.top = `${startTop + zoomCorrectedDy}px`;
+                elem.style.left = `${startLeft + dx}px`;
+                elem.style.top = `${startTop + dy}px`;
             } else if (isResizing) {
-                elem.style.width = `${Math.max(50, startW + zoomCorrectedDx)}px`;
+                let newW = startW, newH = startH, newL = startLeft, newT = startTop;
+                
+                // Calculate dimensions and positions based on direction
+                if (resizeDir.includes('e')) {
+                    newW = startW + dx;
+                }
+                if (resizeDir.includes('w')) {
+                    newW = startW - dx;
+                    newL = startLeft + dx;
+                }
+                if (resizeDir.includes('s')) {
+                    newH = startH + dy;
+                }
+                if (resizeDir.includes('n')) {
+                    newH = startH - dy;
+                    newT = startTop + dy;
+                }
+                
+                // Enforce minimum size (prevent flipping)
+                if(newW < 20) { newW = 20; if(resizeDir.includes('w')) newL = startLeft + startW - 20; }
+                if(newH < 20) { newH = 20; if(resizeDir.includes('n')) newT = startTop + startH - 20; }
+                
+                elem.style.width = `${newW}px`;
+                elem.style.left = `${newL}px`;
+                elem.style.height = `${newH}px`;
+                elem.style.top = `${newT}px`;
+                
+                // Update sticker font size
                 const sticker = elem.querySelector('.sticker');
-                if(sticker) sticker.style.fontSize = `${(startW + zoomCorrectedDx)/20}rem`; 
+                if(sticker) sticker.style.fontSize = `${Math.max(20, newW)/20}rem`; 
+            } else if (isRotating) {
+                const rect = elem.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+                elem.style.transform = `rotate(${angle + 90}deg)`;
             }
         });
 
-        elem.addEventListener('pointerup', () => { isDragging = false; isResizing = false; });
+        elem.addEventListener('pointerup', () => { 
+            if(isDragging || isResizing || isRotating) {
+                // Save state to DB
+                const currentAngleStr = elem.style.transform.match(/rotate\(([-\d.]+)deg\)/);
+                const currentAngle = currentAngleStr ? parseFloat(currentAngleStr[1]) : startAngle;
+                this.updateMediaData(elem.dataset.id, {
+                    x: elem.offsetLeft,
+                    y: elem.offsetTop,
+                    width: elem.offsetWidth,
+                    height: elem.offsetHeight,
+                    rotation: currentAngle
+                });
+            }
+            isDragging = false; isResizing = false; isRotating = false; 
+        });
+    }
+
+    saveMediaToDB(mediaData) {
+        if (!AppManager.activeNotebookId || !this.activeCanvas) return;
+        const pageId = this.activeCanvas.dataset.page;
+        const nb = AppManager.notebooks.find(n => n.id === AppManager.activeNotebookId);
+        if(!nb) return;
+        const page = nb.pages.find(p => p.id === pageId);
+        if(!page) return;
+        if(!page.media) page.media = [];
+        page.media.push(mediaData);
+        DatabaseManager.saveNotebooks(AppManager.notebooks);
+    }
+
+    updateMediaData(mediaId, updates) {
+        if (!AppManager.activeNotebookId || !this.activeCanvas) return;
+        const pageId = this.activeCanvas.dataset.page;
+        const nb = AppManager.notebooks.find(n => n.id === AppManager.activeNotebookId);
+        if(!nb) return;
+        const page = nb.pages.find(p => p.id === pageId);
+        if(!page || !page.media) return;
+        const media = page.media.find(m => m.id === mediaId);
+        if(media) {
+            Object.assign(media, updates);
+            DatabaseManager.saveNotebooks(AppManager.notebooks);
+        }
     }
 
     resizeCanvas(canvas) {
@@ -1047,7 +1666,7 @@ class DrawingPad {
         
         let cColor = this.color;
 
-        const pageNumber = parseInt(canvas.dataset.page);
+        const pageId = canvas.dataset.page;
         const notebookId = AppManager.activeNotebookId;
 
         this.currentStroke = {
@@ -1056,7 +1675,7 @@ class DrawingPad {
             normSize: this.size / rect.width, 
             points: [{x: unX, y: unY, thicknessMultiplier: 1}],
             notebookId: notebookId,
-            pageNumber: pageNumber,
+            pageId: pageId,
             _saved: false
         };
 
@@ -1194,8 +1813,10 @@ class DrawingPad {
             this.globalHistory.push(this.currentStroke);
             // Veritabanını senkronize et (tüm diziyi güvenli şekilde kaydet)
             const notebookId = this.currentStroke.notebookId;
-            const pageNumber = this.currentStroke.pageNumber;
-            DatabaseManager.syncDrawings(notebookId, pageNumber, this.globalHistory);
+            const pageId = this.currentStroke.pageId;
+            DatabaseManager.syncDrawings(notebookId, pageId, this.globalHistory);
+            
+            if(typeof AppManager !== 'undefined') AppManager.renderSidebar();
         }
         this.currentStroke = null;
     }

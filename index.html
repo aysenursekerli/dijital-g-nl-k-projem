@@ -8,7 +8,9 @@
     <title>Dijital Ajada</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -81,8 +83,10 @@
         <!-- ==================== AŞAMA 2: DEFTER ÖN İZLEME (KİTAP MODU) ==================== -->
         <div id="view-preview" class="view-layer">
             <div class="preview-header">
-                <button class="nav-btn" id="btn-return-library"><i data-lucide="chevron-left"></i> Kütüphaneye Dön</button>
-                <button class="nav-btn primary-btn" id="btn-add-page" style="margin-left: 15px;"><i data-lucide="file-plus"></i> Yeni Sayfa Ekle</button>
+                <button class="nav-btn" id="btn-return-library"><i data-lucide="chevron-left"></i> Kütüphaneye
+                    Dön</button>
+                <button class="nav-btn primary-btn" id="btn-add-page" style="margin-left: 15px;"><i
+                        data-lucide="file-plus"></i> Yeni Sayfa Ekle</button>
             </div>
 
             <div class="container" id="main-container">
@@ -93,83 +97,145 @@
         <!-- ==================== AŞAMA 3: TEK SAYFA DÜZENLEME (EDİT MODU) ==================== -->
         <div id="view-edit" class="view-layer">
 
-            <div class="edit-header">
-                <button class="nav-btn primary-btn" id="btn-finish-edit"><i data-lucide="save"></i> Kaydet</button>
+            <!-- Yan Panel (Sidebar Navigator) -->
+            <div class="sidebar-navigator" id="sidebar-navigator">
+                <div class="sidebar-header">
+                    <h3>Sayfalar</h3>
+                </div>
+                <div class="thumbnails-container" id="thumbnails-container">
+                    <!-- JS ile doldurulacak -->
+                </div>
+                <div class="sidebar-footer">
+                    <button class="nav-btn primary-btn add-page-sidebar-btn" id="sidebar-add-page-btn"><i
+                            data-lucide="plus"></i> Yeni Sayfa</button>
+                </div>
+            </div>
 
-                <!-- Taşınan Araç Çubuğu -->
-                <div class="toolbar" id="toolbar">
-                    <button class="tool-btn active" data-tool="hand" title="El (Sayfa Kaydırma)"><i data-lucide="hand"></i></button>
-                    <button class="tool-btn" data-tool="pen" title="Normal Kalem"><i data-lucide="pencil"></i></button>
-                    <button class="tool-btn" data-tool="fountain" title="Dolma Kalem"><i data-lucide="pen-tool"></i></button>
-                    <button class="tool-btn" data-tool="highlighter" title="Fosforlu Kalem"><i data-lucide="highlighter"></i></button>
-                    <button class="tool-btn" data-tool="eraser" title="Silgi"><i data-lucide="eraser"></i></button>
-                    <div class="tool-separator"></div>
-                    <div class="color-palette" id="color-palette">
-                        <button class="color-btn active" style="background-color: #333333;" data-color="#333333"
-                            title="Siyah"></button>
-                        <button class="color-btn" style="background-color: #ef4444;" data-color="#ef4444"
-                            title="Kırmızı"></button>
-                        <button class="color-btn" style="background-color: #3b82f6;" data-color="#3b82f6"
-                            title="Mavi"></button>
-                        <button class="color-btn" style="background-color: #22c55e;" data-color="#22c55e"
-                            title="Yeşil"></button>
-                        <button class="color-btn" style="background-color: #eab308;" data-color="#eab308"
-                            title="Sarı"></button>
-                        <div class="color-wrapper" title="Özel Renk Seç">
-                            <input type="color" id="color-picker" value="#333333">
-                        </div>
+            <div class="main-edit-area">
+                <div class="edit-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="nav-btn" id="toggle-sidebar-btn" title="Paneli Gizle/Göster"><i
+                                data-lucide="layout-grid"></i></button>
+                        <button class="nav-btn primary-btn" id="btn-finish-edit"><i data-lucide="save"></i>
+                            Kaydet</button>
                     </div>
-                    <div class="range-wrapper" title="Fırça Kalınlığı">
-                        <input type="range" id="size-picker" min="1" max="50" value="3">
-                    </div>
-                    <div class="tool-separator"></div>
-                    <button class="tool-btn" id="undo-btn" title="Geri Al"><i data-lucide="undo-2"></i></button>
 
-                    <div class="tool-separator"></div>
-                    <div class="tool-separator"></div>
-                    <div class="media-group" id="media-toolbar">
-                        <button class="tool-btn" id="btn-upload-trigger" title="Fotoğraf Yükle"><i data-lucide="image"></i></button>
-                        <input type="file" id="image-upload" accept="image/*" style="display: none;">
-                        
-                        <div class="dropdown" id="emoji-dropdown">
-                            <button class="tool-btn" title="Emoji Ekle"><i data-lucide="smile"></i></button>
-                            <div class="dropdown-content emoji-grid">
-                                <div class="sticker-btn" data-sticker="⭐">⭐</div>
-                                <div class="sticker-btn" data-sticker="📌">📌</div>
-                                <div class="sticker-btn" data-sticker="💡">💡</div>
-                                <div class="sticker-btn" data-sticker="❤️">❤️</div>
-                                <div class="sticker-btn" data-sticker="🔥">🔥</div>
-                                <div class="sticker-btn" data-sticker="✅">✅</div>
-                                <div class="sticker-btn" data-sticker="🚀">🚀</div>
-                                <div class="sticker-btn" data-sticker="✨">✨</div>
-                                <div class="sticker-btn" data-sticker="🌈">🌈</div>
-                                <div class="sticker-btn" data-sticker="🍎">🍎</div>
-                                <div class="sticker-btn" data-sticker="⚽">⚽</div>
-                                <div class="sticker-btn" data-sticker="🎉">🎉</div>
-                                <div class="sticker-btn" data-sticker="🎨">🎨</div>
-                                <div class="sticker-btn" data-sticker="📸">📸</div>
-                                <div class="sticker-btn" data-sticker="📝">📝</div>
-                                <div class="sticker-btn" data-sticker="🔍">🔍</div>
+                    <!-- Taşınan Araç Çubuğu -->
+                    <div class="toolbar" id="toolbar">
+                        <button class="tool-btn active" data-tool="hand" title="El (Sayfa Kaydırma)"><i
+                                data-lucide="hand"></i></button>
+                        <button class="tool-btn" data-tool="pen" title="Normal Kalem"><i
+                                data-lucide="pencil"></i></button>
+                        <button class="tool-btn" data-tool="fountain" title="Dolma Kalem"><i
+                                data-lucide="pen-tool"></i></button>
+                        <button class="tool-btn" data-tool="highlighter" title="Fosforlu Kalem"><i
+                                data-lucide="highlighter"></i></button>
+                        <button class="tool-btn" data-tool="eraser" title="Silgi"><i data-lucide="eraser"></i></button>
+                        <div class="tool-separator"></div>
+                        <div class="color-palette" id="color-palette">
+                            <button class="color-btn active" style="background-color: #333333;" data-color="#333333"
+                                title="Siyah"></button>
+                            <button class="color-btn" style="background-color: #ef4444;" data-color="#ef4444"
+                                title="Kırmızı"></button>
+                            <button class="color-btn" style="background-color: #3b82f6;" data-color="#3b82f6"
+                                title="Mavi"></button>
+                            <button class="color-btn" style="background-color: #22c55e;" data-color="#22c55e"
+                                title="Yeşil"></button>
+                            <button class="color-btn" style="background-color: #eab308;" data-color="#eab308"
+                                title="Sarı"></button>
+                            <div class="color-wrapper" title="Özel Renk Seç">
+                                <input type="color" id="color-picker" value="#333333">
                             </div>
                         </div>
+                        <div class="range-wrapper" title="Fırça Kalınlığı">
+                            <input type="range" id="size-picker" min="1" max="50" value="3">
+                        </div>
+                        <div class="tool-separator"></div>
+                        <button class="tool-btn" id="undo-btn" title="Geri Al"><i data-lucide="undo-2"></i></button>
 
-                        <button class="tool-btn" id="sticker-popup-btn" title="Sticker Ekle"><i data-lucide="sticker"></i></button>
+                        <div class="tool-separator"></div>
+                        <div class="tool-separator"></div>
+                        <div class="media-group" id="media-toolbar">
+                            <button class="tool-btn" id="btn-add-text" title="Metin Ekle"><i
+                                    data-lucide="type"></i></button>
+                            <div class="dropdown" id="shape-dropdown">
+                                <button class="tool-btn" title="Şekil Ekle"><i data-lucide="shapes"></i></button>
+                                <div class="dropdown-content shape-grid" style="padding: 8px;">
+                                    <div class="shape-btn" data-shape="square" title="Kare"><i data-lucide="square"></i></div>
+                                    <div class="shape-btn" data-shape="circle" title="Daire"><i data-lucide="circle"></i></div>
+                                    <div class="shape-btn" data-shape="line" title="Çizgi"><i data-lucide="minus"></i></div>
+                                    <div class="shape-btn" data-shape="triangle" title="Üçgen"><i data-lucide="triangle"></i></div>
+                                    <div class="shape-btn" data-shape="star" title="Yıldız"><i data-lucide="star"></i></div>
+                                    <div class="shape-btn" data-shape="arrow" title="Ok"><i data-lucide="arrow-right"></i></div>
+                                    <div class="shape-btn" data-shape="diamond" title="Eşkenar Dörtgen"><i data-lucide="diamond"></i></div>
+                                </div>
+                            </div>
+                            <button class="tool-btn" id="btn-upload-trigger" title="Fotoğraf Yükle"><i
+                                    data-lucide="image"></i></button>
+                            <input type="file" id="image-upload" accept="image/*" style="display: none;">
+
+                            <div class="dropdown" id="emoji-dropdown">
+                                <button class="tool-btn" title="Emoji Ekle"><i data-lucide="smile"></i></button>
+                                <div class="dropdown-content emoji-grid">
+                                    <div class="sticker-btn" data-sticker="⭐">⭐</div>
+                                    <div class="sticker-btn" data-sticker="📌">📌</div>
+                                    <div class="sticker-btn" data-sticker="💡">💡</div>
+                                    <div class="sticker-btn" data-sticker="❤️">❤️</div>
+                                    <div class="sticker-btn" data-sticker="🔥">🔥</div>
+                                    <div class="sticker-btn" data-sticker="✅">✅</div>
+                                    <div class="sticker-btn" data-sticker="🚀">🚀</div>
+                                    <div class="sticker-btn" data-sticker="✨">✨</div>
+                                    <div class="sticker-btn" data-sticker="🌈">🌈</div>
+                                    <div class="sticker-btn" data-sticker="🍎">🍎</div>
+                                    <div class="sticker-btn" data-sticker="⚽">⚽</div>
+                                    <div class="sticker-btn" data-sticker="🎉">🎉</div>
+                                    <div class="sticker-btn" data-sticker="🎨">🎨</div>
+                                    <div class="sticker-btn" data-sticker="📸">📸</div>
+                                    <div class="sticker-btn" data-sticker="📝">📝</div>
+                                    <div class="sticker-btn" data-sticker="🔍">🔍</div>
+                                </div>
+                            </div>
+
+                            <button class="tool-btn" id="sticker-popup-btn" title="Sticker Ekle"><i
+                                    data-lucide="sticker"></i></button>
+                        </div>
+                        <button class="tool-btn danger" id="clear-btn" title="İçeriği Temizle"><i
+                                data-lucide="trash-2"></i></button>
                     </div>
-                    <button class="tool-btn danger" id="clear-btn" title="İçeriği Temizle"><i data-lucide="trash-2"></i></button>
+                </div>
+
+                <!-- Çizerken Zoom ve Pan İşlemlerinin Yapılacağı Tek Sayfa Alanı -->
+                <div class="edit-workspace" id="edit-workspace">
+                    <button class="nav-arrow-btn left-arrow" id="btn-prev-edit-page" title="Önceki Sayfa"><i
+                            data-lucide="chevron-left"></i></button>
+                    <div class="zoom-wrapper" id="zoom-wrapper">
+                        <div class="fullscreen-canvas-wrapper" id="edit-page-slot">
+                            <!-- Tıklanan sayfanın "canvas" ve "içeriği" geçici olarak buraya teleport edilecek -->
+                        </div>
+                    </div>
+                    <button class="nav-arrow-btn right-arrow" id="btn-next-edit-page" title="Sonraki Sayfa"><i
+                            data-lucide="chevron-right"></i></button>
+                </div>
+
+            </div> <!-- main-edit-area BİTİŞ -->
+
+        </div>
+    </div>
+
+    <!-- ==================== PIN MODAL ==================== -->
+    <div id="pin-modal" class="modal">
+        <div class="modal-content pin-modal-content" style="max-width: 300px; text-align: center;">
+            <div class="modal-header" style="justify-content: center;">
+                <h2 id="pin-modal-title">PIN Girin</h2>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <input type="password" id="pin-input" maxlength="4" placeholder="****" 
+                    style="width: 100%; text-align: center; font-size: 2rem; letter-spacing: 10px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text);">
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="btn-cancel-pin" class="nav-btn" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); justify-content: center;">İptal</button>
+                    <button id="btn-submit-pin" class="primary-btn" style="flex: 1; padding: 10px; justify-content: center;">Onayla</button>
                 </div>
             </div>
-
-            <!-- Çizerken Zoom ve Pan İşlemlerinin Yapılacağı Tek Sayfa Alanı -->
-            <div class="edit-workspace" id="edit-workspace">
-                <button class="nav-arrow-btn left-arrow" id="btn-prev-edit-page" title="Önceki Sayfa"><i data-lucide="chevron-left"></i></button>
-                <div class="zoom-wrapper" id="zoom-wrapper">
-                    <div class="fullscreen-canvas-wrapper" id="edit-page-slot">
-                        <!-- Tıklanan sayfanın "canvas" ve "içeriği" geçici olarak buraya teleport edilecek -->
-                    </div>
-                </div>
-                <button class="nav-arrow-btn right-arrow" id="btn-next-edit-page" title="Sonraki Sayfa"><i data-lucide="chevron-right"></i></button>
-            </div>
-
         </div>
     </div>
 
