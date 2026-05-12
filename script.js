@@ -193,13 +193,18 @@ const AppManager = {
             modal.classList.remove('active');
         });
 
+        // Template Modal Eventleri
+        document.getElementById('close-template-btn').addEventListener('click', () => {
+            document.getElementById('template-modal').classList.remove('active');
+        });
+
         // Aşama 2 Eventleri
         document.getElementById('btn-return-library').addEventListener('click', () => {
             this.switchPhase(1);
         });
         
         document.getElementById('btn-add-page').addEventListener('click', () => {
-            this.addNewPageToBook();
+            this.openTemplateModal();
         });
 
         // Aşama 3 Eventleri
@@ -229,7 +234,7 @@ const AppManager = {
         const sidebarAddPageBtn = document.getElementById('sidebar-add-page-btn');
         if(sidebarAddPageBtn) {
             sidebarAddPageBtn.addEventListener('click', () => {
-                this.addNewPageToBook();
+                this.openTemplateModal();
             });
         }
 
@@ -468,9 +473,14 @@ const AppManager = {
                 });
             }
 
+            let bgStyle = '';
+            if (pageObj.bgImage) {
+                bgStyle = `style="background-image: url('${pageObj.bgImage}'); background-size: cover; background-position: center;"`;
+            }
+
             bookDiv.innerHTML += `
-                <div class="page pattern-${nb.pattern}" data-page="${pageObj.id}">
-                    <div class="page-content">
+                <div class="page pattern-${pageObj.pattern || nb.pattern}" data-page="${pageObj.id}">
+                    <div class="page-content" ${bgStyle}>
                         ${mediaHTML}
                         <button class="edit-page-btn" title="Bu Sayfayı Düzenle"><i data-lucide="pencil"></i> Düzenle</button>
                         <div class="page-footer">${index + 1}</div>
@@ -480,7 +490,19 @@ const AppManager = {
             `;
         });
 
-        bookDiv.innerHTML += `
+        let totalPages = nb.pages.length + 2;
+        let dummyPageHtml = '';
+        if (totalPages % 2 !== 0) {
+            dummyPageHtml = `
+                <div class="page dummy-page">
+                    <div class="page-content" style="background: ${nb.coverColor}; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.5);">
+                        Boş Sayfa
+                    </div>
+                </div>
+            `;
+        }
+
+        bookDiv.innerHTML += dummyPageHtml + `
             <div class="page page-cover page-cover-bottom" data-density="hard">
                 <div class="page-content" style="background: ${nb.coverColor}">
                     <h2>Son</h2>
@@ -554,7 +576,107 @@ const AppManager = {
         });
     },
 
-    addNewPageToBook() {
+    openTemplateModal() {
+        const modal = document.getElementById('template-modal');
+        const grid = document.getElementById('template-grid');
+        grid.innerHTML = '';
+        
+        const createDivider = (text) => {
+            const div = document.createElement('div');
+            div.className = 'template-divider';
+            div.innerText = text;
+            grid.appendChild(div);
+        };
+
+        createDivider('Temel Sayfalar');
+
+        const basePatterns = [
+            { name: 'Boş', pattern: 'blank', bg: '#fff' },
+            { name: 'Noktalı', pattern: 'dotted', bg: 'radial-gradient(#cbd5e1 2px, transparent 2px)', size: '15px 15px' },
+            { name: 'Kareli', pattern: 'squared', bg: 'linear-gradient(#e2e8f0 1px,transparent 1px),linear-gradient(90deg,#e2e8f0 1px,transparent 1px)', size: '15px 15px' },
+            { name: 'Çizgili', pattern: 'lined', bg: 'linear-gradient(transparent 95%, #e2e8f0 5%)', size: '100% 24px' }
+        ];
+
+        basePatterns.forEach(bp => {
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            let styleStr = `width:100%; height:240px; background-color:#fff; display:flex; align-items:center; justify-content:center; color:#333; font-weight:bold; font-size:1.1rem;`;
+            if (bp.pattern !== 'blank') {
+                styleStr += ` background-image:${bp.bg}; background-size:${bp.size};`;
+            }
+            item.innerHTML = `<div style="${styleStr}"><span style="background:rgba(255,255,255,0.85); padding:6px 12px; border-radius:6px;">${bp.name}</span></div>`;
+            item.addEventListener('click', () => {
+                modal.classList.remove('active');
+                this.addNewPageToBook('', bp.pattern);
+            });
+            grid.appendChild(item);
+        });
+
+        createDivider('Sayfalar');
+        const sayfaFiles = [
+            "sayfa1.jpg", "sayfa2.jpg", "sayfa3.jpg", "sayfa4.jpg", "sayfa5.jpg", "sayfa6.jpg", "sayfa7.jpg", "sayfa8.jpg", "sayfa9.jpg", "sayfa10.jpg", "sayfa11.jpg", "sayfa12.jpg", "sayfa13.jpg", "sayfa14.jpg"
+        ];
+        sayfaFiles.forEach(file => {
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            item.innerHTML = `<img src="assets/sayfalar/${file}" alt="${file}">`;
+            item.addEventListener('click', () => {
+                modal.classList.remove('active');
+                this.addNewPageToBook(`assets/sayfalar/${file}`, '');
+            });
+            grid.appendChild(item);
+        });
+
+        createDivider('Günlük Planlayıcılar');
+        const gunlukFiles = [
+            "günlükPlanlayıcı1.jpg", "günlükPlanlayıcı2.jpg", "günlükPlanlayıcı3.jpg", "günlükPlanlayıcı4.jpg", "günkükPlanlayıcı5.jpg"
+        ];
+        gunlukFiles.forEach(file => {
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            item.innerHTML = `<img src="assets/sayfalar/${file}" alt="${file}">`;
+            item.addEventListener('click', () => {
+                modal.classList.remove('active');
+                this.addNewPageToBook(`assets/sayfalar/${file}`, '');
+            });
+            grid.appendChild(item);
+        });
+
+        createDivider('Haftalık Planlayıcılar');
+        const haftalikFiles = [
+            "haftalıkPlanlayıcı1.jpg", "haftalıkPlanlayıcı2.jpg", "haftalıkPlanlayıcı3.jpg", "haftalıkPlanlayıcı4.jpg", "haftalıkPlanlayıcı5.jpg"
+        ];
+        haftalikFiles.forEach(file => {
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            item.innerHTML = `<img src="assets/sayfalar/${file}" alt="${file}">`;
+            item.addEventListener('click', () => {
+                modal.classList.remove('active');
+                this.addNewPageToBook(`assets/sayfalar/${file}`, '');
+            });
+            grid.appendChild(item);
+        });
+
+        createDivider('Alışkanlık Takibi & Yıllık');
+        const digerFiles = [
+            "alışkanlıkTakibi1.jpg", "alışkanlıkTakibi2.jpg", "alışkanlıkTakibi3.jpg", "alışkanlıkTakibi4.jpg",
+            "yıllık1.jpg"
+        ];
+        digerFiles.forEach(file => {
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            item.innerHTML = `<img src="assets/sayfalar/${file}" alt="${file}">`;
+            item.addEventListener('click', () => {
+                modal.classList.remove('active');
+                this.addNewPageToBook(`assets/sayfalar/${file}`, '');
+            });
+            grid.appendChild(item);
+        });
+
+        modal.classList.add('active');
+    },
+
+    addNewPageToBook(bgImage, pattern) {
         if(!this.activeNotebookId) return;
         const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
         
@@ -565,9 +687,7 @@ const AppManager = {
 
         const timestamp = Date.now();
         const newPageId1 = 'pg-' + timestamp + '-1';
-        const newPageId2 = 'pg-' + timestamp + '-2';
-        nb.pages.push({ id: newPageId1, snapshot: null });
-        nb.pages.push({ id: newPageId2, snapshot: null });
+        nb.pages.push({ id: newPageId1, snapshot: null, bgImage: bgImage || '', pattern: pattern || '' });
         
         // Notebooks'u DB'ye kaydet
         DatabaseManager.saveNotebooks(this.notebooks);
@@ -577,7 +697,7 @@ const AppManager = {
         } else {
             this.openBook(this.activeNotebookId, currentIndex);
             setTimeout(() => {
-                if(window.pageFlip) window.pageFlip.flip(nb.pages.length - 1);
+                if(window.pageFlip) window.pageFlip.flip(nb.pages.length);
             }, 150);
         }
     },
@@ -633,12 +753,17 @@ const AppManager = {
         slot.appendChild(pageContent);
         slot.appendChild(canvas);
 
-        if(window.drawingPad) {
-            window.drawingPad.attachToSinglePage(canvas, pageContent);
-            window.drawingPad.refreshAllCanvasesForZoom();
-        }
-
+        // Önce Phase 3'e geçip sayfayı ekranda görünür yap
         if(this.currentPhase !== 3) this.switchPhase(3);
+        
+        // Sayfa ekranda görünür olduktan sonra canvas boyutunu hesapla
+        setTimeout(() => {
+            if(window.drawingPad) {
+                window.drawingPad.attachToSinglePage(canvas, pageContent);
+                window.drawingPad.refreshAllCanvasesForZoom();
+            }
+        }, 10);
+
         this.renderSidebar();
     },
 
@@ -785,6 +910,9 @@ const AppManager = {
         const container = document.getElementById('thumbnails-container');
         if(!container || !this.activeNotebookId) return;
         
+        // Scroll konumunu kaydet
+        const scrollTop = container.scrollTop;
+        
         container.innerHTML = '';
         const nb = this.notebooks.find(n => n.id === this.activeNotebookId);
         if(!nb) return;
@@ -799,9 +927,14 @@ const AppManager = {
                 card.classList.add('active');
             }
 
+            let bgStyle = '';
+            if (pageObj.bgImage) {
+                bgStyle = `style="background-image: url('${pageObj.bgImage}'); background-size: cover; background-position: center;"`;
+            }
+
             // Thumbnail içeriği
             card.innerHTML = `
-                <div class="thumbnail-preview pattern-${nb.pattern}"></div>
+                <div class="thumbnail-preview pattern-${pageObj.pattern || nb.pattern}" ${bgStyle}></div>
                 <div class="thumbnail-page-num">Sayfa ${index + 1}</div>
                 <button class="delete-page-btn" title="Sayfayı Sil"><i data-lucide="trash-2"></i></button>
             `;
@@ -916,6 +1049,9 @@ const AppManager = {
             container.appendChild(card);
         });
         
+        // Scroll konumunu geri yükle
+        container.scrollTop = scrollTop;
+        
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 };
@@ -1022,7 +1158,7 @@ class DrawingPad {
         this.activeCanvas = canvas;
         this.activePageContent = pageContent;
         
-        canvas.style.zIndex = "100";
+        canvas.style.zIndex = "999";
         canvas.style.touchAction = "none";
         
         if(!canvas.dataset.hasEvents) {
@@ -1361,16 +1497,28 @@ class DrawingPad {
         const stickerData = {
             general: ['🐱', '🐶', '🦊', '🐨', '🦁', '🐷', '🦄', '🐝', '🦋', '🐳'],
             nature: ['🌸', '🌻', '🌲', '🍀', '🍂', '🍄', '🌍', '🌙', '☀️', '🌊'],
-            school: ['📚', '✏️', '🎨', '🎓', '🎒', '🔬', '📐', '🖍️', '📖', '💻']
+            school: ['📚', '✏️', '🎨', '🎓', '🎒', '🔬', '📐', '🖍️', '📖', '💻'],
+            custom: ['stecerlar/1.jpg', 'stecerlar/2.jpg', 'stecerlar/3.jpg', 'stecerlar/4.jpg', 'stecerlar/5.jpg', 'stecerlar/6.jpg', 'stecerlar/7.jpg', 'stecerlar/8.jpg', 'stecerlar/9.jpg', 'stecerlar/10.jpg', 'stecerlar/11.jpg']
         };
 
         const items = stickerData[category] || [];
         items.forEach(emoji => {
             const item = document.createElement('div');
             item.className = 'sticker-item';
-            item.innerHTML = emoji;
+            
+            const isImage = emoji.includes('.jpg') || emoji.includes('.png');
+            if (isImage) {
+                item.innerHTML = `<img src="${emoji}" style="width:100%; height:100%; object-fit:contain;">`;
+            } else {
+                item.innerHTML = emoji;
+            }
+
             item.addEventListener('click', () => {
-                this.addMediaToPage({ type: 'sticker', content: emoji, width: 100, height: 100 });
+                if (isImage) {
+                    this.addMediaToPage({ type: 'image', content: emoji, width: 120, height: 120 });
+                } else {
+                    this.addMediaToPage({ type: 'sticker', content: emoji, width: 100, height: 100 });
+                }
                 document.getElementById('sticker-modal').classList.remove('active');
             });
             grid.appendChild(item);
