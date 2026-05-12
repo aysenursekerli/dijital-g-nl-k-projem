@@ -1,32 +1,49 @@
-# Dijital Gunluk ve Akilli Planlayici (Digital Journal)
+content = """# 📓 Pro Planner - Dijital Günlük ve Akıllı Ajanda
+
+Selam! Ben **AYŞE NUR ŞEKERLİ**, Pamukkale Üniversitesi Yönetim Bilişim Sistemleri (YBS) öğrencisiyim. Bu proje benim hem yazılım öğrenme sürecimin hem de dönem ödevimin bir parçası. 
+
+---
+
+## ✨ Uygulamamın Tüm Özellikleri (Neler Yapabiliyor?)
+
+### 1. Gerçekçi Kitap Deneyimi ve Şablonlar
+* **3D Sayfa Çevirme (Page Flip):** Sayfaları fareyle veya dokunarak tuttuğumda gerçek bir defter gibi kıvrılarak çevriliyor.
+* **Defter Kütüphanesi:** İstediğim kadar yeni defter oluşturabiliyor ve her birine farklı dijital kapaklar seçebiliyorum.
+* **Sayfa Taslakları:** İhtiyacıma göre çizgili, kareli, noktalı (bullet journal) veya tamamen boş sayfa şablonları kullanabiliyorum.
+
+### 2. Çizim ve Not Alma (Canvas Motoru)
+* **Hassas Çizim Araçları:** Kalemle ekrana yazarken gecikme olmuyor. Farklı renk paletleri, fırça kalınlıkları ve silgi seçenekleri var.
+
+### 3. Gelişmiş İçerik ve Düzenleme (Transform Motoru)
+* **Şekil ve İkon Menüsü:** Sadece çizim değil; Kare, Daire, Yıldız, Üçgen, Ok gibi temiz vektörel şekiller ekleyebiliyorum.
+* **Metin Kutuları:** Klavyeyle yazı yazabilmek için sayfaya sürüklenebilir metin kutuları ekleyebiliyorum.
+* **Sticker ve Fotoğraf:** Sayfaları süslemek için çıkartma ve cihazımdan resim ekleme desteği.
+* **360° Döndürme ve Boyutlandırma:** Eklediğim her şekli, yazıyı veya resmi köşelerinden tutup büyütebiliyor ve döndürme koluyla 360 derece çevirebiliyorum.
+* **Katman Yönetimi:** Bir şekle tıkladığımda açılan cam efektli minik menüden onu diğer şekillerin önüne getirebiliyor veya arkasına gönderebiliyorum.
+
+### 4. Akıllı Sayfa Yönetimi ve Güvenlik
+* **Akıllı Yan Panel (Sidebar):** Sayfaların küçük ön izlemelerini (thumbnail) solda açılır bir panelde görüyorum. Sayfaların yerlerini sürükleyip değiştirebiliyor veya silebiliyorum.
+* **Akıllı Zoom:** Yazı yazmaya başladığımda sayfa bana otomatik olarak yaklaşıyor (zoom yapıyor), bitince pürüzsüzce geri uzaklaşıyor.
+* **Gizli Kasa (PIN Kilit Sistemi):** Özel defterlerime 4 haneli şifre koyabiliyorum. Şifreyi bilmeyen içindeki sayfaları göremiyor!
+* **Kusursuz Veri Kaydı (PageId):** Sayfaları sıra numarasıyla değil, onlara özel gizli kimliklerle (UUID) cihaz hafızasına (IndexedDB) kaydediyorum. Böylece aradan sayfa silsem bile çizimler ve eklediğim şekiller asla birbirine karışmıyor.
+
+---
 
 
-## Temel Ozellikler
-
-### 1. Interaktif Kitap Deneyimi
-- **3D Page Flip:** Gercek bir defter hissi veren, sayfalarin cevrilebildigi animasyonlu kitap arayuzu.
-- **Kisisellestirilebilir Kapaklar:** Kullanicinin kendi tarzini yansitabilecegi dijital kapak secenekleri.
-
-### 2. Gelismis Cizim ve Not Alma (Canvas API)
-- **Hassas Kalem Destegi:** Tablet kalemleri (Apple Pencil, S-Pen vb.) icin dusuk gecikmeli cizim deneyimi.
-- **Zengin Arac Seti:** Farkli kalem stilleri (kursun, dolma, fosforlu), genis renk paleti ve silgi secenekleri.
-- **Multimedya Entegrasyonu:** Sayfalara fotograf ekleme, surukle-birak stickerlar (cikartmalar) ve kopyala-yapistir destegi.
-
-### 3. Sablon ve Organizasyon
-- **Hazir Sayfa Sablonlari:** Cizgili, kareli, noktali (bullet journal) ve haftalik planlayici taslaklari.
-- **Sticker Kutuphanesi:** Notlari gorsellestirmek icin kategori bazli dijital cikartmalar.
-
-### 4. Akilli Ozellikler ve Guvenlik (AI ve Security)
-- **AI Mood Tracker:** Gunluk girislerindeki duygu durumunu analiz eden yapay zeka destegi.
-- **Smart Search (OCR):** El yazisi notlar icerisinde dijital arama yapabilme kabiliyeti.
-- **Privacy Vault:** Kisisel verilerin gizliligi icin PIN veya sifre korumali giris.
-- **PDF Export:** Sayfalari yuksek kalitede PDF olarak disa aktarma ve paylasma.
-
-## Teknik Mimari
-- **Frontend:** HTML5, CSS3 (3D Transforms), JavaScript (ES6+)
-- **Cizim Motoru:** HTML5 Canvas API
-- **Veri Saklama:** IndexedDB (Gorsel ve cizimlerin yerel cihazda yuksek performansli saklanmasi)
-- **AI Entegrasyonu:** Metin analizi ve OCR surecleri icin dis API'lar.
+## Takıldığım Yerler ve Yapay Zeka ile Çözümlerimiz
 
 
+* **Sorun:** Sayfayı çevirmeye çalışıyorum ama çevrilmiyor! Çünkü üstteki çizim katmanı tıklamaları engelliyordu.
+  * **Çözüm Promptu:** *"Üst katmana `pointer-events: none` ver, sadece içindeki nesnelere `auto` ver ki boşluğa tıklayınca sayfa çevrilsin."*
+  
+* **Sorun:** Şekil ekliyorum ama kalemle çizmişim gibi kalıyor, yerinden oynamıyor.
+  * **Çözüm Promptu:** *"Şekilleri canvas'a çizme, onları ayrı bir HTML div'i olarak ekle ve etrafına 8 tane tutma noktası olan bir çerçeve yap."*
+
+* **Sorun:** Düzenleme moduna bir giriyorum, her yer mavi çerçeve dolu! Gözüm yoruldu.
+  * **Çözüm Promptu:** *"Hepsini gizle! Sadece tıkladığım nesnenin çerçevesi ve döndürme kolu görünsün, diğerleri tertemiz kalsın."*
+
+* **Sorun:** Sayfa silince eski çizimler yeni sayfaların üstüne biniyordu.
+  * **Çözüm Promptu:** *"Sayfaları numarayla değil `pageId` (UUID) ile takip et, veritabanını buna göre sıfırla ve yeniden kur."*
+
+---
 
