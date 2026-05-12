@@ -274,6 +274,39 @@
         </div>
     </div>
 
+    <!-- ==================== TEXT FORMATTING TOOLBAR (POPUP) ==================== -->
+    <div id="text-formatting-menu" class="text-formatting-menu">
+        <div class="text-format-group">
+            <label>Font Stili:</label>
+            <select id="text-font-style" class="text-format-select">
+                <option value="Inter">Klasik</option>
+                <option value="cursive">El Yazısı</option>
+                <option value="Georgia">Serif</option>
+                <option value="'Courier New'">Monospace</option>
+            </select>
+        </div>
+        
+        <div class="text-format-group">
+            <label>Hizalama:</label>
+            <div class="text-align-buttons">
+                <button class="text-align-btn" data-align="left" title="Sola Hizala"><i data-lucide="align-left"></i></button>
+                <button class="text-align-btn" data-align="center" title="Ortaya Hizala"><i data-lucide="align-center"></i></button>
+                <button class="text-align-btn" data-align="right" title="Sağa Hizala"><i data-lucide="align-right"></i></button>
+            </div>
+        </div>
+        
+        <div class="text-format-group">
+            <label>Renk:</label>
+            <div class="text-color-wrapper">
+                <input type="color" id="text-color-picker" value="#333333" class="text-color-picker">
+            </div>
+        </div>
+
+        <div class="text-format-group">
+            <button class="text-format-close-btn" id="close-text-formatting">&times;</button>
+        </div>
+    </div>
+
     <!-- Kütüphaneler -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     <script src="script.js"></script>

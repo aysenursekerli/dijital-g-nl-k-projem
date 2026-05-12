@@ -612,6 +612,77 @@ const AppManager = {
             grid.appendChild(item);
         });
 
+        createDivider('Spesifik Şablonlar');
+
+        // Kalori Takibi
+        const kaloriTemplate = document.createElement('div');
+        kaloriTemplate.className = 'template-item';
+        kaloriTemplate.innerHTML = `
+            <div style="width:100%; height:240px; background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                <svg style="position:absolute; width:100%; height:100%; opacity:0.15;" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect width="100" height="100" fill="none" stroke="#FF8C42" stroke-width="0.5"/>
+                    <circle cx="50" cy="30" r="15" fill="none" stroke="#FF8C42" stroke-width="0.5"/>
+                    <path d="M 50 45 L 50 80" stroke="#FF8C42" stroke-width="0.5"/>
+                    <path d="M 30 60 L 70 60" stroke="#FF8C42" stroke-width="0.5"/>
+                </svg>
+                <div style="text-align:center; position:relative; z-index:1;">
+                    <div style="font-size:2.5rem; margin-bottom:8px;">🍎</div>
+                    <span style="background:rgba(255,255,255,0.9); padding:8px 16px; border-radius:8px; font-weight:600; color:#FF8C42; display:inline-block;">Kalori Takibi</span>
+                </div>
+            </div>
+        `;
+        kaloriTemplate.addEventListener('click', () => {
+            modal.classList.remove('active');
+            this.addNewPageToBook('', 'template-kalori');
+        });
+        grid.appendChild(kaloriTemplate);
+
+        // Spor Günlüğü
+        const sporTemplate = document.createElement('div');
+        sporTemplate.className = 'template-item';
+        sporTemplate.innerHTML = `
+            <div style="width:100%; height:240px; background: linear-gradient(135deg, #B4E5FF 0%, #A8D8FF 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                <svg style="position:absolute; width:100%; height:100%; opacity:0.15;" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <circle cx="30" cy="30" r="8" fill="none" stroke="#0066CC" stroke-width="0.5"/>
+                    <path d="M 30 38 L 30 60" stroke="#0066CC" stroke-width="0.5"/>
+                    <path d="M 15 48 L 45 48" stroke="#0066CC" stroke-width="0.5"/>
+                    <path d="M 30 60 L 20 85" stroke="#0066CC" stroke-width="0.5"/>
+                    <path d="M 30 60 L 40 85" stroke="#0066CC" stroke-width="0.5"/>
+                </svg>
+                <div style="text-align:center; position:relative; z-index:1;">
+                    <div style="font-size:2.5rem; margin-bottom:8px;">⚽</div>
+                    <span style="background:rgba(255,255,255,0.9); padding:8px 16px; border-radius:8px; font-weight:600; color:#0066CC; display:inline-block;">Spor Günlüğü</span>
+                </div>
+            </div>
+        `;
+        sporTemplate.addEventListener('click', () => {
+            modal.classList.remove('active');
+            this.addNewPageToBook('', 'template-spor');
+        });
+        grid.appendChild(sporTemplate);
+
+        // Bütçe Planlayıcı
+        const butceTemplate = document.createElement('div');
+        butceTemplate.className = 'template-item';
+        butceTemplate.innerHTML = `
+            <div style="width:100%; height:240px; background: linear-gradient(135deg, #D4FFB4 0%, #C8E6C9 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                <svg style="position:absolute; width:100%; height:100%; opacity:0.15;" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="20" y="20" width="60" height="60" fill="none" stroke="#4CAF50" stroke-width="0.5"/>
+                    <circle cx="50" cy="50" r="15" fill="none" stroke="#4CAF50" stroke-width="0.5"/>
+                    <text x="50" y="55" text-anchor="middle" font-size="20" fill="#4CAF50">$</text>
+                </svg>
+                <div style="text-align:center; position:relative; z-index:1;">
+                    <div style="font-size:2.5rem; margin-bottom:8px;">💰</div>
+                    <span style="background:rgba(255,255,255,0.9); padding:8px 16px; border-radius:8px; font-weight:600; color:#4CAF50; display:inline-block;">Bütçe Planlayıcı</span>
+                </div>
+            </div>
+        `;
+        butceTemplate.addEventListener('click', () => {
+            modal.classList.remove('active');
+            this.addNewPageToBook('', 'template-butce');
+        });
+        grid.appendChild(butceTemplate);
+
         createDivider('Sayfalar');
         const sayfaFiles = [
             "sayfa1.jpg", "sayfa2.jpg", "sayfa3.jpg", "sayfa4.jpg", "sayfa5.jpg", "sayfa6.jpg", "sayfa7.jpg", "sayfa8.jpg", "sayfa9.jpg", "sayfa10.jpg", "sayfa11.jpg", "sayfa12.jpg", "sayfa13.jpg", "sayfa14.jpg"
@@ -1471,8 +1542,16 @@ class DrawingPad {
             });
         });
 
+        // Text Formatting Menu Close Button
+        const closeTextFormattingBtn = document.getElementById('close-text-formatting');
+        if (closeTextFormattingBtn) {
+            closeTextFormattingBtn.addEventListener('click', () => {
+                this.hideTextFormattingMenu();
+            });
+        }
+
         document.addEventListener('pointerdown', (e) => {
-            if(!e.target.closest('.transform-box') && this.currentMode === 'hand') {
+            if(!e.target.closest('.transform-box') && !e.target.closest('.text-formatting-menu') && this.currentMode === 'hand') {
                 document.querySelectorAll('.transform-box').forEach(el => {
                     el.classList.remove('selected');
                     // Eğer text edit modundaysa çık
@@ -1485,6 +1564,7 @@ class DrawingPad {
                         this.updateMediaData(el.dataset.id, { content: textContent.innerText });
                     }
                 });
+                this.hideTextFormattingMenu();
             }
         });
     }
@@ -1536,6 +1616,10 @@ class DrawingPad {
             mediaData.height = mediaData.height || 100;
             mediaData.rotation = 0;
             mediaData.zIndex = 10;
+            // Text formatting defaults
+            mediaData.fontStyle = 'Inter';
+            mediaData.textAlign = 'left';
+            mediaData.textColor = '#333333';
         }
 
         const wrapper = document.createElement('div');
@@ -1550,7 +1634,7 @@ class DrawingPad {
         
         let innerHTML = '';
         if (mediaData.type === 'text') {
-            innerHTML = `<div class="media-content text-content" contenteditable="false">${mediaData.content}</div>`;
+            innerHTML = `<div class="media-content text-content" contenteditable="false" style="font-family: ${mediaData.fontStyle}; text-align: ${mediaData.textAlign}; color: ${mediaData.textColor};">${mediaData.content}</div>`;
         } else if (mediaData.type === 'shape') {
             let shapeClass = '';
             if(mediaData.content === 'square') shapeClass = 'shape-square';
@@ -1599,6 +1683,9 @@ class DrawingPad {
                 
                 const zoomWrapper = document.getElementById('zoom-wrapper');
                 if(zoomWrapper) zoomWrapper.classList.add('zoom-active');
+                
+                // Show text formatting menu
+                this.showTextFormattingMenu(wrapper, mediaData);
             });
             textContent.addEventListener('pointerdown', (e) => {
                 if (textContent.isContentEditable) e.stopPropagation();
@@ -1608,6 +1695,7 @@ class DrawingPad {
                 if(zoomWrapper) zoomWrapper.classList.remove('zoom-active');
                 
                 this.updateMediaData(mediaData.id, { content: textContent.innerText });
+                this.hideTextFormattingMenu();
             });
         }
 
@@ -1620,14 +1708,14 @@ class DrawingPad {
             });
         }
 
-        this.setupTransformEngine(wrapper);
+        this.setupTransformEngine(wrapper, mediaData);
 
         if (!isInitialLoad) {
             this.saveMediaToDB(mediaData);
         }
     }
 
-    setupTransformEngine(elem) {
+    setupTransformEngine(elem, mediaData) {
         let isDragging = false, isResizing = false, isRotating = false;
         let startX, startY, startW, startH, startLeft, startTop, startAngle;
         let resizeDir = '';
@@ -1764,6 +1852,84 @@ class DrawingPad {
         if(!page.media) page.media = [];
         page.media.push(mediaData);
         DatabaseManager.saveNotebooks(AppManager.notebooks);
+    }
+
+    showTextFormattingMenu(textWrapper, mediaData) {
+        const menu = document.getElementById('text-formatting-menu');
+        if (!menu) return;
+
+        // Update menu with current text properties
+        const fontSelect = document.getElementById('text-font-style');
+        const colorPicker = document.getElementById('text-color-picker');
+        const alignBtns = document.querySelectorAll('.text-align-btn');
+
+        fontSelect.value = mediaData.fontStyle || 'Inter';
+        colorPicker.value = mediaData.textColor || '#333333';
+
+        // Update active alignment button
+        alignBtns.forEach(btn => btn.classList.remove('active'));
+        const activeAlignBtn = document.querySelector(`.text-align-btn[data-align="${mediaData.textAlign || 'left'}"]`);
+        if (activeAlignBtn) activeAlignBtn.classList.add('active');
+
+        // Position menu near the text box
+        const rect = textWrapper.getBoundingClientRect();
+        menu.style.left = (rect.left + rect.width + 10) + 'px';
+        menu.style.top = rect.top + 'px';
+
+        menu.classList.add('active');
+
+        // Remove old event listeners and add fresh ones
+        fontSelect.removeEventListener('change', fontSelectHandler);
+        colorPicker.removeEventListener('input', colorPickerHandler);
+        alignBtns.forEach(btn => {
+            btn.removeEventListener('click', alignBtnHandler);
+        });
+
+        // Define handlers with closure to access mediaData
+        window.currentTextMediaData = mediaData;
+        window.currentTextWrapper = textWrapper;
+
+        const fontSelectHandler = () => {
+            const newFont = fontSelect.value;
+            const textContent = textWrapper.querySelector('.text-content');
+            if (textContent) {
+                textContent.style.fontFamily = newFont;
+            }
+            this.updateMediaData(mediaData.id, { fontStyle: newFont });
+        };
+
+        const colorPickerHandler = () => {
+            const newColor = colorPicker.value;
+            const textContent = textWrapper.querySelector('.text-content');
+            if (textContent) {
+                textContent.style.color = newColor;
+            }
+            this.updateMediaData(mediaData.id, { textColor: newColor });
+        };
+
+        const alignBtnHandler = (e) => {
+            const align = e.target.closest('.text-align-btn').dataset.align;
+            alignBtns.forEach(btn => btn.classList.remove('active'));
+            e.target.closest('.text-align-btn').classList.add('active');
+            const textContent = textWrapper.querySelector('.text-content');
+            if (textContent) {
+                textContent.style.textAlign = align;
+            }
+            this.updateMediaData(mediaData.id, { textAlign: align });
+        };
+
+        fontSelect.addEventListener('change', fontSelectHandler);
+        colorPicker.addEventListener('input', colorPickerHandler);
+        alignBtns.forEach(btn => {
+            btn.addEventListener('click', alignBtnHandler);
+        });
+    }
+
+    hideTextFormattingMenu() {
+        const menu = document.getElementById('text-formatting-menu');
+        if (menu) {
+            menu.classList.remove('active');
+        }
     }
 
     updateMediaData(mediaId, updates) {

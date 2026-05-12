@@ -232,6 +232,11 @@ body {
   padding:40px 30px; position:absolute; top:0; left:0; width:100%;
   z-index:150; pointer-events:none;
 }
+.page.pattern-template-kalori .page-content,
+.page.pattern-template-spor .page-content,
+.page.pattern-template-butce .page-content {
+  background: transparent;
+}
 .page-cover { background:linear-gradient(135deg,#1e293b,#334155); color:white; border:none; }
 .page-cover .page-content { justify-content:center; align-items:center; text-align:center; }
 .page-header { font-size:1.3rem; color:#334155; margin-bottom:20px; border-bottom:2px solid #f1f5f9; padding-bottom:10px; font-weight:700; }
@@ -656,10 +661,119 @@ body {
 .color-picker-wrapper input[type="color"] { width:50px; height:40px; border:1px solid var(--border); border-radius:10px; cursor:pointer; background:var(--surface2); padding:2px; }
 .create-btn { width:100%; justify-content:center; margin-top:8px; }
 
+/* ===== TEXT FORMATTING TOOLBAR ===== */
+.text-formatting-menu {
+  position: fixed; z-index: 3000;
+  background: rgba(26,29,39,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(124,106,247,0.3);
+  border-radius: 14px; padding: 14px 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  display: none; flex-direction: column; gap: 12px;
+  min-width: 220px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.text-formatting-menu.active {
+  display: flex; opacity: 1; pointer-events: auto;
+}
+.text-format-group {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.text-format-group label {
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.text-format-select {
+  padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface2);
+  color: var(--text); font-size: 0.9rem;
+  font-family: inherit; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.text-format-select:hover, .text-format-select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.text-align-buttons {
+  display: flex; gap: 4px;
+}
+.text-align-btn {
+  flex: 1; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 8px; background: transparent; color: var(--text-muted);
+  cursor: pointer; transition: all 0.2s ease;
+  display: flex; justify-content: center; align-items: center;
+}
+.text-align-btn:hover {
+  background: rgba(255,255,255,0.08); color: var(--text);
+}
+.text-align-btn.active {
+  background: var(--accent); color: white; border-color: var(--accent);
+}
+.text-align-btn svg {
+  width: 16px; height: 16px;
+}
+.text-color-wrapper {
+  display: flex; align-items: center; gap: 8px;
+}
+.text-color-picker {
+  -webkit-appearance: none; border: none; padding: 2px;
+  width: 40px; height: 40px; border-radius: 8px;
+  cursor: pointer; background: none;
+  border: 2px solid var(--border);
+  transition: all 0.2s ease;
+}
+.text-color-picker:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.text-color-picker::-webkit-color-swatch-wrapper { padding: 2px; }
+.text-color-picker::-webkit-color-swatch {
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+}
+.text-format-close-btn {
+  align-self: flex-end; background: none; border: none;
+  color: var(--text-muted); cursor: pointer; font-size: 1.2rem;
+  transition: color 0.2s ease; padding: 0; width: 24px; height: 24px;
+  display: flex; justify-content: center; align-items: center;
+}
+.text-format-close-btn:hover {
+  color: var(--danger);
+}
+
 /* ===== PAGE PATTERNS ===== */
 .pattern-dotted { background-image:radial-gradient(#cbd5e1 1.5px, transparent 1.5px); background-size:20px 20px; }
 .pattern-squared { background-image:linear-gradient(#e2e8f0 1px,transparent 1px),linear-gradient(90deg,#e2e8f0 1px,transparent 1px); background-size:20px 20px; }
 .pattern-lined { background-image: linear-gradient(transparent 95%, #e2e8f0 5%); background-size: 100% 24px; }
+
+/* ===== SPECIAL TEMPLATES ===== */
+.page.pattern-template-kalori {
+  background-color: transparent;
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
+  background-image: 
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="kaloriPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="%23FFE5B4"/><circle cx="50" cy="30" r="15" fill="none" stroke="%23FF8C42" stroke-width="0.5" opacity="0.1"/><path d="M 50 50 Q 40 60 30 70" fill="none" stroke="%23FF8C42" stroke-width="0.5" opacity="0.08"/><path d="M 50 50 Q 60 60 70 70" fill="none" stroke="%23FF8C42" stroke-width="0.5" opacity="0.08"/><line x1="20" y1="85" x2="80" y2="85" stroke="%23FF8C42" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23kaloriPattern)"/></svg>'),
+    linear-gradient(to bottom, rgba(255,229,180,0.3), rgba(255,218,185,0.3));
+  background-size: 100px 100px, 100% 100%;
+}
+
+.page.pattern-template-spor {
+  background-color: transparent;
+  background: linear-gradient(135deg, #B4E5FF 0%, #A8D8FF 100%);
+  background-image: 
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="sporPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="%23B4E5FF"/><circle cx="50" cy="30" r="8" fill="none" stroke="%230066CC" stroke-width="0.5" opacity="0.1"/><path d="M 50 40 L 50 60" stroke="%230066CC" stroke-width="0.5" opacity="0.08"/><path d="M 35 50 L 65 50" stroke="%230066CC" stroke-width="0.5" opacity="0.08"/><line x1="20" y1="80" x2="80" y2="80" stroke="%230066CC" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23sporPattern)"/></svg>'),
+    linear-gradient(to right, rgba(180,229,255,0.2), rgba(168,216,255,0.2));
+  background-size: 100px 100px, 100% 100%;
+}
+
+.page.pattern-template-butce {
+  background-color: transparent;
+  background: linear-gradient(135deg, #D4FFB4 0%, #C8E6C9 100%);
+  background-image: 
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="butcePattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="%23D4FFB4"/><rect x="20" y="20" width="60" height="60" fill="none" stroke="%234CAF50" stroke-width="0.5" opacity="0.1"/><circle cx="50" cy="50" r="15" fill="none" stroke="%234CAF50" stroke-width="0.5" opacity="0.08"/><line x1="20" y1="85" x2="80" y2="85" stroke="%234CAF50" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23butcePattern)"/></svg>'),
+    linear-gradient(to bottom right, rgba(212,255,180,0.2), rgba(200,230,201,0.2));
+  background-size: 100px 100px, 100% 100%;
+}
 
 /* ===== NAV ARROWS ===== */
 .nav-arrow-btn {
@@ -745,4 +859,4 @@ body {
     height: 240px;
     object-fit: cover;
     display: block;
-}
+}
